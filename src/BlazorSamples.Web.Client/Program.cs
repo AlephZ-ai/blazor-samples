@@ -13,6 +13,6 @@ builder.Services.ConfigureHttpClientDefaults(http =>
     http.UseServiceDiscovery();
 });
 
-builder.Services.AddHttpClient<WeatherApiClient>(client => client.BaseAddress = new("http://api"));
+builder.Services.AddHttpClient<PersonApiClient>(client => client.BaseAddress = new("http://api"));
 
 await builder.Build().RunAsync();

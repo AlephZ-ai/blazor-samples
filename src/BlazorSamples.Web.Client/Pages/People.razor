@@ -1,0 +1,49 @@
+﻿@using BlazorSamples.Shared
+@page "/people"
+@attribute [StreamRendering]
+@rendermode InteractiveAuto
+@inject PersonApiClient PersonApi
+
+<PageTitle>People</PageTitle>
+
+<h1>People</h1>
+
+<p>This component demonstrates showing data.</p>
+
+@if (people == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>First</th>
+                <th>Last</th>
+                <th>Age</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var person in people)
+            {
+                <tr>
+                    <td>@person.FirstName</td>
+                    <td>@person.LastName</td>
+                    <td>@person.Age.ToString(CultureInfo.InvariantCulture)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Person[]? people;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate streaming rendering
+        await Task.Delay(5000);
+        people = await PersonApi.GetPersonAsync();
+    }
+}

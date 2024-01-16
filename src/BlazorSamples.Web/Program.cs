@@ -5,7 +5,7 @@ using BlazorSamples.Web.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.Services.AddHttpClient<WeatherApiClient>(client => client.BaseAddress = new("http://api"));
+builder.Services.AddHttpClient<PersonApiClient>(client => client.BaseAddress = new("http://api"));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
