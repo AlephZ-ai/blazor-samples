@@ -3,7 +3,7 @@
 @attribute [StreamRendering]
 @rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @inject NavigationManager NavigationManager
-@inject PersonApiClient PersonApi
+@inject ApiClient Api
 
 <PageTitle>People</PageTitle>
 
@@ -70,12 +70,12 @@ else
     private async Task LoadAsync()
     {
         CurrentPage ??= 1;
-        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
+        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
     }
 
     private async Task Delete(int id)
     {
-        await PersonApi.DeletePersonAsync(id);
-        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
+        await Api.DeletePersonAsync(id);
+        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
     }
 }

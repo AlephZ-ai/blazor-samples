@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using BlazorSamples.Shared;
+using Azure.AI.OpenAI;
+using Azure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -152,7 +154,7 @@ foreach (var personKvp in people)
 
 const int defaultPageSize = 10;
 
-app.MapGet("/people", (HttpRequest request, [FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize, [FromQuery(Name = "sort")] string? sort) =>
+app.MapGet("/people", ([FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize, [FromQuery(Name = "sort")] string? sort) =>
 {
     var results = people.Values.AsEnumerable();
     switch (sort)
@@ -215,6 +217,26 @@ app.MapDelete("/person/{id:int}", (int id) =>
     return people.Remove(id);
 })
 .WithName("DeletePerson")
+.WithOpenApi();
+
+app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient openAI) =>
+{
+    var chatCompletionsOptions = new ChatCompletionsOptions()
+    {
+        DeploymentName = "gpt-3.5-turbo", // Use DeploymentName for "model" with non-Azure clients
+        Messages =
+        {
+            // The system message represents instructions or other guidance about how the assistant should behave
+            new ChatRequestSystemMessage("You are a helpful assistant. You will talk like a pirate."),
+            // User messages represent current or historical input from the end user
+            new ChatRequestUserMessage(request.Message),
+        }
+    };
+
+    Response<ChatCompletions> response = await openAI.GetChatCompletionsAsync(chatCompletionsOptions).ConfigureAwait(false);
+    return new ChatResponse { Message = response.Value.Choices[0].Message.Content };
+})
+.WithName("Chat")
 .WithOpenApi();
 
 app.Run();

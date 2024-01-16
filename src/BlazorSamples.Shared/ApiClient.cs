@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared
 {
-    public sealed class PersonApiClient(HttpClient httpClient)
+    public sealed class ApiClient(HttpClient httpClient)
     {
         public async Task<Person[]> GetPeopleAsync()
         {
@@ -39,6 +39,12 @@ namespace BlazorSamples.Shared
         public Task DeletePersonAsync(int id)
         {
             return httpClient.DeleteAsync($"/person/{id}");
+        }
+
+        public async Task<ChatResponse?> ChatAsync(ChatRequest request)
+        {
+            var response = await httpClient.PostAsJsonAsync("/chat", request).ConfigureAwait(false);
+            return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
         }
     }
 }

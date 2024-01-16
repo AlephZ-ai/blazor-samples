@@ -3,7 +3,7 @@
 @page "/edit-person/{id:int}"
 @rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @inject NavigationManager NavigationManager
-@inject PersonApiClient PersonApi
+@inject ApiClient Api
 
 @if (id is null)
 {
@@ -65,11 +65,11 @@ else
     {
         if (id is null)
         {
-            await PersonApi.CreatePersonAsync(person!);
+            await Api.CreatePersonAsync(person!);
         }
         else
         {
-            await PersonApi.UpdatePersonAsync(person!);
+            await Api.UpdatePersonAsync(person!);
         }
        
         NavigationManager.NavigateTo("/people");
@@ -83,7 +83,7 @@ else
         }
         else
         {
-            person = await PersonApi.GetPersonAsync(id.Value);
+            person = await Api.GetPersonAsync(id.Value);
         }
     }
 }

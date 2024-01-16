@@ -1,0 +1,34 @@
+﻿@using BlazorSamples.Shared
+@page "/chat"
+@rendermode @(new InteractiveAutoRenderMode(prerender: true))
+@inject ApiClient Api
+
+<PageTitle>Chat</PageTitle>
+
+<h1>Chat</h1>
+
+<p>Ask question</p>
+
+@if (response is not null)
+{
+    <p>@response.Message</p>
+}
+
+<EditForm Model="request" OnSubmit="SubmitAsync">
+    <div class="form-group">
+        <label for="Message">Message</label>
+        <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Send</button>
+</EditForm>
+
+@code {
+    private ChatRequest request = new();
+    private ChatResponse? response;
+
+    private async Task SubmitAsync()
+    {
+        response = await Api.ChatAsync(request);
+    }
+}
