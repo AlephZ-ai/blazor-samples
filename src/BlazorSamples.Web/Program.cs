@@ -1,7 +1,9 @@
+using BlazorSamples.Shared;
 using BlazorSamples.Web.Client.Pages;
 using BlazorSamples.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHttpClient<WeatherApiClient>(client => client.BaseAddress = new("https://localhost:7011"));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

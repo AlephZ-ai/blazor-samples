@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,9 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="8.0.0-preview.2.23619.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
     <ProjectReference Include="..\BlazorSamples.Web.Client\BlazorSamples.Web.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.1" />
   </ItemGroup>
 
 </Project>
