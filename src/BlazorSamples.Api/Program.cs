@@ -151,10 +151,36 @@ app.MapGet("/person", () =>
 {
     return people.Values;
 })
+.WithName("GetPeople")
+.WithOpenApi();
+
+app.MapGet("/person/{id:int}", (int id) =>
+{
+    return people[id];
+})
 .WithName("GetPerson")
 .WithOpenApi();
 
-app.MapDelete("/person/{id}", (int id) =>
+app.MapPost("/person", (Person person) =>
+{
+    var id = people.Keys.Count + 1;
+    person.Id = id;
+    people[id] = person;
+    return person;
+})
+.WithName("CreatePerson")
+.WithOpenApi();
+
+app.MapPut("/person/{id:int}", (Person person, int id) =>
+{
+    person.Id = id;
+    people[id] = person;
+    return person;
+})
+.WithName("UpdatePerson")
+.WithOpenApi();
+
+app.MapDelete("/person/{id:int}", (int id) =>
 {
     return people.Remove(id);
 })

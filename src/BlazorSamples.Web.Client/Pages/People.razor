@@ -9,20 +9,22 @@
 
 <h1>People</h1>
 
-<p>This component demonstrates showing data.</p>
+<p>This component demonstrates showing list.</p>
 
-@if (people == null)
+@if (people is null)
 {
     <p><em>Loading...</em></p>
 }
 else
 {
+    <td><NavLink class="btn btn-primary" href="@($"/edit-person")">Add</NavLink></td>
     <table class="table">
         <thead>
             <tr>
                 <th>First</th>
                 <th>Last</th>
                 <th>Age</th>
+                <th>Edit</th>
                 <th>Delete</th>
             </tr>
         </thead>
@@ -32,8 +34,9 @@ else
                 <tr>
                     <td>@person.FirstName</td>
                     <td>@person.LastName</td>
-                    <td>@person.Age.ToString(CultureInfo.InvariantCulture)</td>
-                    <td><button class="btn btn-primary" @onclick="() => Delete(person.Id)">Delete</button></td>
+                    <td>@person.Age?.ToString(CultureInfo.InvariantCulture)</td>
+                    <td><NavLink class="btn btn-primary" href="@($"/edit-person/{person.Id.Value}")">Edit</NavLink></td>
+                    <td><button class="btn btn-danger" @onclick="() => Delete(person.Id.Value)">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -46,7 +49,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(1000);
+        await Task.Delay(0);
         people = await PersonApi.GetPersonAsync();
     }
 
