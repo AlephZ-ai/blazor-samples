@@ -13,5 +13,10 @@ namespace BlazorSamples.Shared
         {
             return await httpClient.GetFromJsonAsync<Person[]>("/person").ConfigureAwait(false) ?? [];
         }
+
+        public Task DeletePersonAsync(int id)
+        {
+            return httpClient.DeleteAsync($"/person/{id}");
+        }
     }
 }

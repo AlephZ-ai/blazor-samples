@@ -2,6 +2,7 @@
 @page "/people"
 @attribute [StreamRendering]
 @rendermode InteractiveAuto
+@inject NavigationManager NavigationManager
 @inject PersonApiClient PersonApi
 
 <PageTitle>People</PageTitle>
@@ -22,6 +23,7 @@ else
                 <th>First</th>
                 <th>Last</th>
                 <th>Age</th>
+                <th>Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -31,6 +33,7 @@ else
                     <td>@person.FirstName</td>
                     <td>@person.LastName</td>
                     <td>@person.Age.ToString(CultureInfo.InvariantCulture)</td>
+                    <td><button class="btn btn-primary" @onclick="() => Delete(person.Id)">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -43,7 +46,13 @@ else
     protected override async Task OnInitializedAsync()
     {
         // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(5000);
+        await Task.Delay(1000);
+        people = await PersonApi.GetPersonAsync();
+    }
+
+    private async Task Delete(int id)
+    {
+        await PersonApi.DeletePersonAsync(id);
         people = await PersonApi.GetPersonAsync();
     }
 }

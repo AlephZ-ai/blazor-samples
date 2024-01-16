@@ -38,7 +38,6 @@ else
 app.UseHttpsRedirection();
 app.UseCors();
 
-var numPeople = 6;
 var people = new Dictionary<int, Person>
 {
     [1] = new() { FirstName = "Mary", LastName = "Davis", Age = 71 },
@@ -143,11 +142,23 @@ var people = new Dictionary<int, Person>
     [100] = new() { FirstName = "Jennifer", LastName = "Moore", Age = 36 },
 };
 
+foreach (var personKvp in people)
+{
+    personKvp.Value.Id = personKvp.Key;
+}
+
 app.MapGet("/person", () =>
 {
     return people.Values;
 })
 .WithName("GetPerson")
+.WithOpenApi();
+
+app.MapDelete("/person/{id}", (int id) =>
+{
+    return people.Remove(id);
+})
+.WithName("DeletePerson")
 .WithOpenApi();
 
 app.Run();
