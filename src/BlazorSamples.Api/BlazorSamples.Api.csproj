@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
     <ProjectReference Include="..\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
   </ItemGroup>
 
