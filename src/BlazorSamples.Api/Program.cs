@@ -3,6 +3,9 @@ using Microsoft.Extensions.Hosting;
 using BlazorSamples.Shared;
 using Azure.AI.OpenAI;
 using Azure;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.Identity.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -237,6 +240,26 @@ app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient ope
     return new ChatResponse { Message = response.Value.Choices[0].Message.Content };
 })
 .WithName("Chat")
+.WithOpenApi();
+
+app.MapPost("/kernel", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+{
+    var kernelBuilder = Kernel.CreateBuilder();
+    var c = configuration.GetConnectionString("openai");
+    kernelBuilder.AddOpenAIChatCompletion(
+             "gpt-3.5-turbo",
+             c![4..(c!.Length - 1)]);
+
+    var kernel = kernelBuilder.Build();
+    var prompt = @"{{$input}}
+
+Respond like you are a helpful assistant and you will talk like a pirate.";
+
+    var assistant = kernel.CreateFunctionFromPrompt(prompt);
+    var response = await kernel.InvokeAsync(assistant, new() { ["input"] = request.Message }).ConfigureAwait(false);
+    return new ChatResponse { Message = response.ToString() };
+})
+.WithName("Kernel")
 .WithOpenApi();
 
 app.Run();

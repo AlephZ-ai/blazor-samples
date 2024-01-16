@@ -3,14 +3,27 @@
 @rendermode @(new InteractiveAutoRenderMode(prerender: true))
 @inject ApiClient Api
 
-<PageTitle>Chat</PageTitle>
+@if (isChecked)
+{
+    <PageTitle>Kernel</PageTitle>
 
-<h1>Chat</h1>
+    <h1>Kernel</h1>
+}
+else
+{
+    <PageTitle>Chat</PageTitle>
+
+    <h1>Chat</h1>
+}
+
+<label>Kernel?</label>
+<input type="checkbox" checked="@isChecked" @oninput="CheckboxChanged" />
 
 <p>Ask question</p>
 
 @if (response is not null)
 {
+    <label>Response</label>
     <p>@response.Message</p>
 }
 
@@ -24,11 +37,25 @@
 </EditForm>
 
 @code {
-    private ChatRequest request = new();
+    private bool isChecked;
+
+    private ChatRequest request = new() { Message = "Hello, how are you today?" };
     private ChatResponse? response;
 
     private async Task SubmitAsync()
     {
-        response = await Api.ChatAsync(request);
+        if (isChecked)
+        {
+            response = await Api.KernelAsync(request);
+        }
+        else
+        {
+            response = await Api.ChatAsync(request);
+        }
+    }
+
+    private void CheckboxChanged()
+    {
+        isChecked = !isChecked;
     }
 }

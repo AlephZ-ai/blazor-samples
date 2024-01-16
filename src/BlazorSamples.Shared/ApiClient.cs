@@ -46,5 +46,11 @@ namespace BlazorSamples.Shared
             var response = await httpClient.PostAsJsonAsync("/chat", request).ConfigureAwait(false);
             return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
         }
+
+        public async Task<ChatResponse?> KernelAsync(ChatRequest request)
+        {
+            var response = await httpClient.PostAsJsonAsync("/kernel", request).ConfigureAwait(false);
+            return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
+        }
     }
 }
