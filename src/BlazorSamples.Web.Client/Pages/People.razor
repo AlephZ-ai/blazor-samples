@@ -17,7 +17,9 @@
 }
 else
 {
-    <td><NavLink class="btn btn-primary" href="@($"/edit-person")">Add</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="/edit-person">Add</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage + 1}")">Next</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage - 1}")">Previous</NavLink></td>
     <table class="table">
         <thead>
             <tr>
@@ -44,18 +46,28 @@ else
 }
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? CurrentPage { get; set; }
+    private const int pageSize = 10;
     private Person[]? people;
 
     protected override async Task OnInitializedAsync()
     {
         // Simulate asynchronous loading to demonstrate streaming rendering
         await Task.Delay(0);
-        people = await PersonApi.GetPersonAsync();
+        CurrentPage ??= 1;
+        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize);
     }
 
-    private async Task Delete(int id)
+    protected override Task OnParametersSetAsync()
+    {
+        return OnInitializedAsync();
+    }
+
+private async Task Delete(int id)
     {
         await PersonApi.DeletePersonAsync(id);
-        people = await PersonApi.GetPersonAsync();
+        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize);
     }
 }

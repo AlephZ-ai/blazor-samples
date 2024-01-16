@@ -69,7 +69,7 @@ else
         }
         else
         {
-            PersonApi.UpdatePersonAsync(person!);
+            await PersonApi.UpdatePersonAsync(person!);
         }
        
         NavigationManager.NavigateTo("/people");

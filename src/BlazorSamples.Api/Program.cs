@@ -1,4 +1,5 @@
 using BlazorSamples.Shared;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -147,9 +148,23 @@ foreach (var personKvp in people)
     personKvp.Value.Id = personKvp.Key;
 }
 
-app.MapGet("/person", () =>
+const int defaultPageSize = 10;
+
+app.MapGet("/people", (HttpRequest request, [FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize) =>
 {
-    return people.Values;
+    var results = people.Values.AsEnumerable();
+    if (currentPage.HasValue)
+    {
+        pageSize = pageSize ?? defaultPageSize;
+        results = results.Skip((currentPage.Value - 1) * pageSize.Value);
+    }
+
+    if (pageSize.HasValue)
+    {
+        results = results.Take(pageSize.Value);
+    }
+
+    return results;
 })
 .WithName("GetPeople")
 .WithOpenApi();
