@@ -1,7 +1,7 @@
 ﻿@using BlazorSamples.Shared
 @page "/people"
 @attribute [StreamRendering]
-@rendermode InteractiveAuto
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @inject NavigationManager NavigationManager
 @inject PersonApiClient PersonApi
 
