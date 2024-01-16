@@ -163,7 +163,7 @@ app.MapGet("/person/{id:int}", (int id) =>
 
 app.MapPost("/person", (Person person) =>
 {
-    var id = people.Keys.Count + 1;
+    var id = people.Keys.Max() + 1;
     person.Id = id;
     people[id] = person;
     return person;
