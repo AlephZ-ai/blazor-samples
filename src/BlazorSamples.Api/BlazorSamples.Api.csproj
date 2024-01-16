@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <UserSecretsId>ac951163-2dbc-4a2b-9d5e-d69dde061a78</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BlazorSamples.Aspire\BlazorSamples.Aspire.csproj" />
     <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
     <ProjectReference Include="..\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
   </ItemGroup>

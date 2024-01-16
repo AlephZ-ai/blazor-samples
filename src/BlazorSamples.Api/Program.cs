@@ -1,9 +1,11 @@
-using BlazorSamples.Shared;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using BlazorSamples.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddAzureOpenAI("openai");
 
 builder.Services.AddCors(options =>
 {

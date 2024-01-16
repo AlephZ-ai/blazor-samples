@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>9541ff2c-f4dc-4895-af2c-3c13a30491af</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.Api\BlazorSamples.Api.csproj" />
+    <ProjectReference Include="..\BlazorSamples.Aspire\BlazorSamples.Aspire.csproj" />
     <ProjectReference Include="..\BlazorSamples.Web\BlazorSamples.Web.csproj" />
   </ItemGroup>
 
