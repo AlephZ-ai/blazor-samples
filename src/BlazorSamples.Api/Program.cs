@@ -150,9 +150,22 @@ foreach (var personKvp in people)
 
 const int defaultPageSize = 10;
 
-app.MapGet("/people", (HttpRequest request, [FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize) =>
+app.MapGet("/people", (HttpRequest request, [FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize, [FromQuery(Name = "sort")] string? sort) =>
 {
     var results = people.Values.AsEnumerable();
+    switch (sort)
+    {
+        case "first":
+            results = results.OrderBy(p => p.FirstName);
+            break;
+        case "last":
+            results = results.OrderBy(p => p.LastName);
+            break;
+         case "age":
+            results = results.OrderBy(p => p.Age);
+            break;
+    }   
+
     if (currentPage.HasValue)
     {
         pageSize = pageSize ?? defaultPageSize;

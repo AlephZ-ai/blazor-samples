@@ -18,14 +18,14 @@
 else
 {
     <td><NavLink class="btn btn-primary" href="/edit-person">Add</NavLink></td>
-    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage + 1}")">Next</NavLink></td>
-    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage - 1}")">Previous</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage + 1}&sort={CurrentSort}")">Next</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage - 1}&sort={CurrentSort}")">Previous</NavLink></td>
     <table class="table">
         <thead>
             <tr>
-                <th>First</th>
-                <th>Last</th>
-                <th>Age</th>
+                <th><NavLink class="link-primary" href="/people?sort=first">First</NavLink></th>
+                <th><NavLink class="link-primary" href="/people?sort=last">Last</NavLink></th>
+                <th><NavLink class="link-primary" href="/people?sort=age">Age</NavLink></th>
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -37,8 +37,8 @@ else
                     <td>@person.FirstName</td>
                     <td>@person.LastName</td>
                     <td>@person.Age?.ToString(CultureInfo.InvariantCulture)</td>
-                    <td><NavLink class="btn btn-primary" href="@($"/edit-person/{person.Id.Value}")">Edit</NavLink></td>
-                    <td><button class="btn btn-danger" @onclick="() => Delete(person.Id.Value)">Delete</button></td>
+                    <td><NavLink class="btn btn-primary" href="@($"/edit-person/{person.Id!.Value}")">Edit</NavLink></td>
+                    <td><button class="btn btn-danger" @onclick="() => Delete(person.Id!.Value)">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -49,6 +49,9 @@ else
     [Parameter]
     [SupplyParameterFromQuery(Name = "page")]
     public int? CurrentPage { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "sort")]
+    public string? CurrentSort { get; set; }
     private const int pageSize = 10;
     private Person[]? people;
 
@@ -56,18 +59,23 @@ else
     {
         // Simulate asynchronous loading to demonstrate streaming rendering
         await Task.Delay(0);
-        CurrentPage ??= 1;
-        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize);
+        await LoadAsync();
     }
 
     protected override Task OnParametersSetAsync()
     {
-        return OnInitializedAsync();
+        return LoadAsync();
     }
 
-private async Task Delete(int id)
+    private async Task LoadAsync()
+    {
+        CurrentPage ??= 1;
+        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
+    }
+
+    private async Task Delete(int id)
     {
         await PersonApi.DeletePersonAsync(id);
-        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize);
+        people = await PersonApi.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
     }
 }

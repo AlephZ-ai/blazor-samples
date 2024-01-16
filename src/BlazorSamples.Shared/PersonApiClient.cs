@@ -14,9 +14,9 @@ namespace BlazorSamples.Shared
             return await httpClient.GetFromJsonAsync<Person[]>("/people").ConfigureAwait(false) ?? [];
         }
 
-        public async Task<Person[]> GetPeopleAsync(int currentPage, int pageSize)
+        public async Task<Person[]> GetPeopleAsync(int currentPage, int pageSize, string? sort)
         {
-            return await httpClient.GetFromJsonAsync<Person[]>($"/people?page={currentPage}&size={pageSize}").ConfigureAwait(false) ?? [];
+            return await httpClient.GetFromJsonAsync<Person[]>($"/people?page={currentPage}&size={pageSize}&sort={sort}").ConfigureAwait(false) ?? [];
         }
 
         public Task<Person?> GetPersonAsync(int id)
