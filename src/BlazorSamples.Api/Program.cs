@@ -6,6 +6,8 @@ using Azure;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.Identity.Client;
+using Microsoft.TypeChat;
+using Microsoft.TypeChat.Schema;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -248,7 +250,7 @@ app.MapPost("/kernel", async (ChatRequest request, [FromServices] IConfiguration
     var c = configuration.GetConnectionString("openai");
     kernelBuilder.AddOpenAIChatCompletion(
              "gpt-3.5-turbo",
-             c![4..(c!.Length - 1)]);
+             c![4..(c!.Length - 1)]); ;
 
     var kernel = kernelBuilder.Build();
     var prompt = @"{{$input}}
@@ -260,6 +262,26 @@ Respond like you are a helpful assistant and you will talk like a pirate.";
     return new ChatResponse { Message = response.ToString() };
 })
 .WithName("Kernel")
+.WithOpenApi();
+
+app.MapPost("/type-chat", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+{
+    // Translates user intent into strongly typed Calendar Actions
+    var c = configuration.GetConnectionString("openai");
+    OpenAIConfig config = new OpenAIConfig();
+    config.Azure = false;
+    config.Endpoint = "https://api.openai.com/v1/chat/completions";
+    config.ApiKey = c![4..(c!.Length - 1)];
+    config.Organization = configuration.GetValue<string>("OPENAI_ORGANIZATION");
+    config.Model = "gpt-3.5-turbo";
+    var model = new LanguageModel(config);
+    var translator = new JsonTranslator<CalendarActions>(model);
+
+    // Translate natural language request 
+    CalendarActions actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
+    return actions;
+})
+.WithName("TypeChat")
 .WithOpenApi();
 
 app.Run();

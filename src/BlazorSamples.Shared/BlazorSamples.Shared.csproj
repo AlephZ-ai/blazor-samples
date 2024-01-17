@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.TypeChat.Schema" Version="0.1.231013.1-preview" />
+  </ItemGroup>
+
 </Project>

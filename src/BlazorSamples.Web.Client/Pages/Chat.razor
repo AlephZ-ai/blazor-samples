@@ -1,35 +1,53 @@
-﻿@using BlazorSamples.Shared
+﻿@using System.Text.Json
+@using BlazorSamples.Shared
 @page "/chat"
 @rendermode @(new InteractiveAutoRenderMode(prerender: true))
 @inject ApiClient Api
 
-@if (isChecked)
+@if (engine == ChatEngine.OpenAI)
 {
-    <PageTitle>Kernel</PageTitle>
+    <PageTitle>OpenAI</PageTitle>
 
-    <h1>Kernel</h1>
+    <h1>OpenAI</h1>
 }
-else
+else if (engine == ChatEngine.SemanticKernel)
 {
-    <PageTitle>Chat</PageTitle>
+    <PageTitle>Semantic Kernel</PageTitle>
 
-    <h1>Chat</h1>
+    <h1>Semantic Kernel</h1>
+}
+else if (engine == ChatEngine.TypeChat)
+{
+    <PageTitle>Type Chat</PageTitle>
+
+    <h1>Type Chat</h1>
 }
 
-<label>Kernel?</label>
-<input type="checkbox" checked="@isChecked" @oninput="CheckboxChanged" />
+<input type="radio" checked="@(engine == ChatEngine.OpenAI)"
+    name="Engine" @onchange="@(() => engine = ChatEngine.OpenAI)" />
+<label>OpenAI</label>
 
-<p>Ask question</p>
+<input type="radio" checked="@(engine == ChatEngine.SemanticKernel)"
+    name="Engine" @onchange="@(() => engine = ChatEngine.SemanticKernel)" />
+<label>Semantic Engine</label>
+
+<input type="radio" checked="@(engine == ChatEngine.TypeChat)"
+    name="Engine" @onchange="@(() => engine = ChatEngine.TypeChat)" />
+<label>Type Chat</label>
 
 @if (response is not null)
 {
-    <label>Response</label>
-    <p>@response.Message</p>
+    <div>
+        <label>Response</label>
+        <p>@response.Message</p>
+    </div>
 }
+
+<p>Ask question</p>
 
 <EditForm Model="request" OnSubmit="SubmitAsync">
     <div class="form-group">
-        <label for="Message">Message</label>
+        <label for="Message">Question</label>
         <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
     </div>
 
@@ -37,25 +55,25 @@ else
 </EditForm>
 
 @code {
-    private bool isChecked;
+    private ChatEngine engine = ChatEngine.OpenAI;
 
-    private ChatRequest request = new() { Message = "Hello, how are you today?" };
+    private ChatRequest request = new() { Message = "I need to get my tires changed from 12:00 to 2:00 pm on Friday March 15, 2024" };
     private ChatResponse? response;
 
     private async Task SubmitAsync()
     {
-        if (isChecked)
-        {
-            response = await Api.KernelAsync(request);
-        }
-        else
+        if (engine == ChatEngine.OpenAI)
         {
             response = await Api.ChatAsync(request);
         }
-    }
-
-    private void CheckboxChanged()
-    {
-        isChecked = !isChecked;
+        else if (engine == ChatEngine.SemanticKernel)
+        {
+            response = await Api.KernelAsync(request);
+        }
+        else if (engine == ChatEngine.TypeChat)
+        {
+            var calendarActions = await Api.TypeChatAsync(request);
+            response = new ChatResponse { Message =  JsonSerializer.Serialize(calendarActions) };
+        }
     }
 }

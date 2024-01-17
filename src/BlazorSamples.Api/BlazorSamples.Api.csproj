@@ -20,6 +20,11 @@
     <PackageReference Include="Microsoft.SemanticKernel.Plugins.Web" Version="1.1.0-alpha" />
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.1.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Yaml" Version="1.1.0" />
+    <PackageReference Include="Microsoft.TypeChat" Version="0.1.231013.1-preview" />
+    <PackageReference Include="Microsoft.TypeChat.Dialog" Version="0.1.231005.1-preview" />
+    <PackageReference Include="Microsoft.TypeChat.Program" Version="0.1.231013.1-preview" />
+    <PackageReference Include="Microsoft.TypeChat.Schema" Version="0.1.231013.1-preview" />
+    <PackageReference Include="Microsoft.TypeChat.SemanticKernel" Version="0.1.231013.1-preview" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
