@@ -16,12 +16,41 @@ using Microsoft.SemanticKernel.Plugins.Web;
 using DocumentFormat.OpenXml.Drawing;
 using Humanizer;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.SemanticKernel.TextGeneration;
+using Microsoft.Graph.ExternalConnectors;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var aiModel = "gpt-3.5-turbo-1106";
 builder.AddServiceDefaults();
 builder.AddAzureOpenAI("openai");
+builder.Services.AddSingleton(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    return new OpenAIChatCompletionService(aiModel, GetOpenAIKey(configuration), null, serviceProvider.GetRequiredService<HttpClient>(), serviceProvider.GetRequiredService<ILoggerFactory>());
+});
 
+builder.Services.AddSingleton<IChatCompletionService>(serviceProvider => serviceProvider.GetRequiredService<OpenAIChatCompletionService>());
+builder.Services.AddSingleton<ITextGenerationService>(serviceProvider => serviceProvider.GetRequiredService<OpenAIChatCompletionService>());
+builder.Services.AddSingleton<Kernel>();
+builder.Services.AddSingleton<ILanguageModel>(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var config = new OpenAIConfig
+    {
+        Azure = false,
+        Endpoint = "https://api.openai.com/v1/chat/completions",
+        ApiKey = GetOpenAIKey(configuration),
+        Model = aiModel,
+    };
+
+    return new LanguageModel(config);
+});
+
+builder.Services.AddSingleton(typeof(JsonTranslator<>), typeof(JsonTranslator<>));
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
@@ -245,7 +274,7 @@ app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient ope
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
-        DeploymentName = "gpt-3.5-turbo", // Use DeploymentName for "model" with non-Azure clients
+        DeploymentName = aiModel, // Use DeploymentName for "model" with non-Azure clients
         Messages =
         {
             // The system message represents instructions or other guidance about how the assistant should behave
@@ -261,44 +290,20 @@ app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient ope
 .WithName("Chat")
 .WithOpenApi();
 
-app.MapPost("/kernel", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+app.MapPost("/kernel", async (ChatRequest request, [FromServices] Kernel kernel) =>
 {
-    var kernelBuilder = Kernel.CreateBuilder();
-    var key = configuration.GetConnectionString("openai")!;
-    key = key![4..(key!.Length - 1)];
-    kernelBuilder.AddOpenAIChatCompletion(
-             "gpt-3.5-turbo",
-             key); ;
-
-    var kernel = kernelBuilder.Build();
-    var prompt = @"{{$input}}
+    var promptTemplate = @"{{$input}}
 
 Respond like you are a helpful assistant and you will talk like a pirate.";
 
-    var assistant = kernel.CreateFunctionFromPrompt(prompt);
-    var response = await kernel.InvokeAsync(assistant, new() { ["input"] = request.Message }).ConfigureAwait(false);
+    var response = await kernel.InvokePromptAsync(promptTemplate, new() { ["input"] = request.Message }).ConfigureAwait(false);
     return new ChatResponse { Message = response.ToString() };
 })
 .WithName("Kernel")
 .WithOpenApi();
 
-app.MapPost("/type-chat", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+app.MapPost("/type-chat", async (ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator) =>
 {
-    // Translates user intent into strongly typed Calendar Actions
-    var key = configuration.GetConnectionString("openai")!;
-    key = key![4..(key!.Length - 1)];
-    var config = new OpenAIConfig
-    {
-        Azure = false,
-        Endpoint = "https://api.openai.com/v1/chat/completions",
-        ApiKey = key,
-        Organization = configuration.GetValue<string>("OPENAI_ORGANIZATION"),
-        Model = "gpt-3.5-turbo",
-    };
-
-    var model = new LanguageModel(config);
-    var translator = new JsonTranslator<CalendarActions>(model);
-
     // Translate natural language request 
     var actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
     return actions;
@@ -306,16 +311,11 @@ app.MapPost("/type-chat", async (ChatRequest request, [FromServices] IConfigurat
 .WithName("TypeChat")
 .WithOpenApi();
 
-app.MapPost("/kernel-plugins", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+app.MapPost("/kernel-plugins", async (ChatRequest request, [FromServices] OpenAIClient openAI) =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
-    var key = configuration.GetConnectionString("openai")!;
-    key = key[4..(key!.Length - 1)];
     kernelBuilder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
-    kernelBuilder.AddOpenAIChatCompletion(
-             "gpt-3.5-turbo-1106",
-             key); ;
-
+    kernelBuilder.AddOpenAIChatCompletion(aiModel, openAI);
     var kernel = kernelBuilder.Build();
 #pragma warning disable SKEXP0050 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     kernel.ImportPluginFromType<ConversationSummaryPlugin>();
@@ -360,3 +360,10 @@ Everytime you use a plugin, you will be prompted to chat with me about your expe
 .WithOpenApi();
 
 app.Run();
+
+string GetOpenAIKey(IConfiguration configuration)
+{
+    var key = configuration.GetConnectionString("openai")!;
+    key = key[4..(key.Length - 1)];
+    return key;
+}
