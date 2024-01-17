@@ -8,6 +8,14 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.Identity.Client;
 using Microsoft.TypeChat;
 using Microsoft.TypeChat.Schema;
+using Microsoft.SemanticKernel.Plugins.Core;
+using Microsoft.SemanticKernel.Plugins.Document;
+using Microsoft.SemanticKernel.Plugins.Memory;
+using Microsoft.SemanticKernel.Plugins.MsGraph;
+using Microsoft.SemanticKernel.Plugins.Web;
+using DocumentFormat.OpenXml.Drawing;
+using Humanizer;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -256,10 +264,11 @@ app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient ope
 app.MapPost("/kernel", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
-    var c = configuration.GetConnectionString("openai");
+    var key = configuration.GetConnectionString("openai")!;
+    key = key![4..(key!.Length - 1)];
     kernelBuilder.AddOpenAIChatCompletion(
              "gpt-3.5-turbo",
-             c![4..(c!.Length - 1)]); ;
+             key); ;
 
     var kernel = kernelBuilder.Build();
     var prompt = @"{{$input}}
@@ -276,21 +285,78 @@ Respond like you are a helpful assistant and you will talk like a pirate.";
 app.MapPost("/type-chat", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
 {
     // Translates user intent into strongly typed Calendar Actions
-    var c = configuration.GetConnectionString("openai");
-    OpenAIConfig config = new OpenAIConfig();
-    config.Azure = false;
-    config.Endpoint = "https://api.openai.com/v1/chat/completions";
-    config.ApiKey = c![4..(c!.Length - 1)];
-    config.Organization = configuration.GetValue<string>("OPENAI_ORGANIZATION");
-    config.Model = "gpt-3.5-turbo";
+    var key = configuration.GetConnectionString("openai")!;
+    key = key![4..(key!.Length - 1)];
+    var config = new OpenAIConfig
+    {
+        Azure = false,
+        Endpoint = "https://api.openai.com/v1/chat/completions",
+        ApiKey = key,
+        Organization = configuration.GetValue<string>("OPENAI_ORGANIZATION"),
+        Model = "gpt-3.5-turbo",
+    };
+
     var model = new LanguageModel(config);
     var translator = new JsonTranslator<CalendarActions>(model);
 
     // Translate natural language request 
-    CalendarActions actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
+    var actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
     return actions;
 })
 .WithName("TypeChat")
+.WithOpenApi();
+
+app.MapPost("/kernel-plugins", async (ChatRequest request, [FromServices] IConfiguration configuration) =>
+{
+    var kernelBuilder = Kernel.CreateBuilder();
+    var key = configuration.GetConnectionString("openai")!;
+    key = key[4..(key!.Length - 1)];
+    kernelBuilder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
+    kernelBuilder.AddOpenAIChatCompletion(
+             "gpt-3.5-turbo-1106",
+             key); ;
+
+    var kernel = kernelBuilder.Build();
+#pragma warning disable SKEXP0050 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    kernel.ImportPluginFromType<ConversationSummaryPlugin>();
+    kernel.ImportPluginFromType<FileIOPlugin>();
+    kernel.ImportPluginFromType<HttpPlugin>();
+    kernel.ImportPluginFromType<MathPlugin>();
+    kernel.ImportPluginFromType<TextPlugin>();
+    kernel.ImportPluginFromType<TimePlugin>();
+    kernel.ImportPluginFromType<WaitPlugin>();
+#pragma warning restore SKEXP0050 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0051 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//    kernel.ImportPluginFromType<DocumentPlugin>();
+#pragma warning restore SKEXP0051 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0052 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//    kernel.ImportPluginFromType<TextMemoryPlugin>();
+#pragma warning restore SKEXP0052 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0053 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+//    kernel.ImportPluginFromType<CalendarPlugin>();
+//    kernel.ImportPluginFromType<CloudDrivePlugin>();
+//    kernel.ImportPluginFromType<EmailPlugin>();
+//    kernel.ImportPluginFromType<OrganizationHierarchyPlugin>();
+#pragma warning restore SKEXP0053 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0054 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    kernel.ImportPluginFromType<SearchUrlPlugin>();
+    kernel.ImportPluginFromType<WebFileDownloadPlugin>();
+    //    kernel.ImportPluginFromType<WebSearchEnginePlugin>();
+#pragma warning restore SKEXP0054 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+    var settings = new OpenAIPromptExecutionSettings { ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions };
+    var promptTemplate = @"{{$input}}
+
+-------
+Everytime you respond you will do the following in deciding what to say, lets have fun!!
+You will take advantage of all plugins a lot, I am here to play around with plugins, you have access to the outside world, go wild to your hearts content, you are free.
+Please just continue to chat with me about my questions and you experiences with using the tools.  I want to know all about why you chose the tool and were you how well it met your criteria after using it.
+Everytime you use a plugin, you will be prompted to chat with me about your experience with the plugin.  I will ask you questions about the plugin and you will answer them.I will then use your answers to improve the plugin.";
+
+    var response = await kernel.InvokePromptAsync(promptTemplate, new(settings) { ["input"] = request.Message }).ConfigureAwait(false);
+    return new ChatResponse { Message = response.ToString() };
+})
+.WithName("KernelPlugins")
 .WithOpenApi();
 
 app.Run();

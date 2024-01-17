@@ -59,5 +59,12 @@ namespace BlazorSamples.Shared
             var calendarActions = await response.Content.ReadFromJsonAsync<CalendarActions>().ConfigureAwait(false);
             return calendarActions;
         }
+
+        public async Task<ChatResponse?> KernelPluginsAsync(ChatRequest request)
+        {
+            var response = await httpClient.PostAsJsonAsync("/kernel-plugins", request).ConfigureAwait(false);
+            return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
+        }
+
     }
 }

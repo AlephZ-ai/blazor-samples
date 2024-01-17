@@ -4,6 +4,7 @@
     {
         OpenAI = 0,
         SemanticKernel = 1,
-        TypeChat = 2
+        TypeChat = 2,
+        KernelPlugins = 3
     }
 }
