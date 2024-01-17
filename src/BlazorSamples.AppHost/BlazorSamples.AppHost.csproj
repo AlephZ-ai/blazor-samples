@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.Api\BlazorSamples.Api.csproj" />
     <ProjectReference Include="..\BlazorSamples.Aspire\BlazorSamples.Aspire.csproj" />
+    <ProjectReference Include="..\BlazorSamples.LegacyApi\BlazorSamples.LegacyApi.csproj" />
     <ProjectReference Include="..\BlazorSamples.Web\BlazorSamples.Web.csproj" />
   </ItemGroup>
 

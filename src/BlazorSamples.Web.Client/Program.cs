@@ -14,5 +14,6 @@ builder.Services.ConfigureHttpClientDefaults(http =>
 });
 
 builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
+builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
 
 await builder.Build().RunAsync();

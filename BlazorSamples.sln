@@ -16,6 +16,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorSamples.Web.Client", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorSamples.Aspire", "src\BlazorSamples.Aspire\BlazorSamples.Aspire.csproj", "{B174C75D-5C64-4E8A-97B4-00C83BB6AEA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorSamples.LegacyApi", "src\BlazorSamples.LegacyApi\BlazorSamples.LegacyApi.csproj", "{99A59D16-4734-443F-AEBB-2DAA4ECCD991}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{B174C75D-5C64-4E8A-97B4-00C83BB6AEA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B174C75D-5C64-4E8A-97B4-00C83BB6AEA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B174C75D-5C64-4E8A-97B4-00C83BB6AEA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99A59D16-4734-443F-AEBB-2DAA4ECCD991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A59D16-4734-443F-AEBB-2DAA4ECCD991}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A59D16-4734-443F-AEBB-2DAA4ECCD991}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A59D16-4734-443F-AEBB-2DAA4ECCD991}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,6 +3,7 @@
 @page "/chat"
 @rendermode @(new InteractiveAutoRenderMode(prerender: true))
 @inject ApiClient Api
+@inject LegacyApiClient LegacyApi
 
 @if (engine == ChatEngine.OpenAI)
 {
@@ -28,6 +29,12 @@ else if (engine == ChatEngine.KernelPlugins)
 
     <h1>Kernel Plugins</h1>
 }
+else if (engine == ChatEngine.TypeKernel)
+{
+    <PageTitle>Type Kernel</PageTitle>
+
+    <h1>Type Kernel</h1>
+}
 
 <input type="radio" checked="@(engine == ChatEngine.OpenAI)"
     name="Engine" @onchange="@(() => engine = ChatEngine.OpenAI)" />
@@ -44,6 +51,10 @@ else if (engine == ChatEngine.KernelPlugins)
 <input type="radio" checked="@(engine == ChatEngine.KernelPlugins)"
     name="Engine" @onchange="@(() => engine = ChatEngine.KernelPlugins)" />
 <label>Kernel Plugins</label>
+
+<input type="radio" checked="@(engine == ChatEngine.TypeKernel)"
+    name="Engine" @onchange="@(() => engine = ChatEngine.TypeKernel)" />
+<label>Type Kernel</label>
 
 @if (response is not null)
 {
@@ -88,6 +99,10 @@ else if (engine == ChatEngine.KernelPlugins)
         else if (engine == ChatEngine.KernelPlugins)
         {
             response = await Api.KernelPluginsAsync(request);
+        }
+        else if (engine == ChatEngine.TypeKernel)
+        {
+            response = await LegacyApi.TypeKernelAsync(request);
         }
     }
 }
