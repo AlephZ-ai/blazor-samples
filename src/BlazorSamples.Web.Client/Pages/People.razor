@@ -18,14 +18,14 @@
 else
 {
     <td><NavLink class="btn btn-primary" href="/edit-person">Add</NavLink></td>
-    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage + 1}&sort={CurrentSort}")">Next</NavLink></td>
-    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage - 1}&sort={CurrentSort}")">Previous</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage + 1}&sort={CurrentSort}&desc={IsCurrentSortDesc}&last={LastSort}")">Next</NavLink></td>
+    <td><NavLink class="btn btn-primary" href="@($"/people?page={CurrentPage - 1}&sort={CurrentSort}&desc={IsCurrentSortDesc}&last={LastSort}")">Previous</NavLink></td>
     <table class="table">
         <thead>
             <tr>
-                <th><NavLink class="link-primary" href="/people?sort=first">First</NavLink></th>
-                <th><NavLink class="link-primary" href="/people?sort=last">Last</NavLink></th>
-                <th><NavLink class="link-primary" href="/people?sort=age">Age</NavLink></th>
+                <th><NavLink class="link-primary" href="@($"/people?sort=first&desc={SwapSortDesc("first")}")">First Name</NavLink></th>
+                <th><NavLink class="link-primary" href="@($"/people?sort=last&desc={SwapSortDesc("last")}")">Last Name</NavLink></th>
+                <th><NavLink class="link-primary" href="@($"/people?sort=age&desc={SwapSortDesc("age")}")">Age</NavLink></th>
                 <th>Edit</th>
                 <th>Delete</th>
             </tr>
@@ -38,7 +38,7 @@ else
                     <td>@person.LastName</td>
                     <td>@person.Age?.ToString(CultureInfo.InvariantCulture)</td>
                     <td><NavLink class="btn btn-primary" href="@($"/edit-person/{person.Id!.Value}")">Edit</NavLink></td>
-                    <td><button class="btn btn-danger" @onclick="() => Delete(person.Id!.Value)">Delete</button></td>
+                    <td><button class="btn btn-danger" @onclick="() => DeleteAsync(person.Id!.Value)">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -52,6 +52,12 @@ else
     [Parameter]
     [SupplyParameterFromQuery(Name = "sort")]
     public string? CurrentSort { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "sort")]
+    public string? LastSort { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "desc")]
+    public bool IsCurrentSortDesc { get; set; }
     private const int pageSize = 10;
     private Person[]? people;
 
@@ -70,12 +76,22 @@ else
     private async Task LoadAsync()
     {
         CurrentPage ??= 1;
-        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
+        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort, IsCurrentSortDesc);
     }
 
-    private async Task Delete(int id)
+    private async Task DeleteAsync(int id)
     {
         await Api.DeletePersonAsync(id);
-        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort);
+        people = await Api.GetPeopleAsync(CurrentPage!.Value, pageSize, CurrentSort, IsCurrentSortDesc);
+    }
+
+    private bool SwapSortDesc(string nextSort)
+    {
+        if (CurrentSort == nextSort)
+        {
+            return !IsCurrentSortDesc;
+        }
+ 
+        return false;
     }
 }

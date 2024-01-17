@@ -14,9 +14,9 @@ namespace BlazorSamples.Shared
             return await httpClient.GetFromJsonAsync<Person[]>("/people").ConfigureAwait(false) ?? [];
         }
 
-        public async Task<Person[]> GetPeopleAsync(int currentPage, int pageSize, string? sort)
+        public async Task<Person[]> GetPeopleAsync(int currentPage, int pageSize, string? sort, bool isSortDesc)
         {
-            return await httpClient.GetFromJsonAsync<Person[]>($"/people?page={currentPage}&size={pageSize}&sort={sort}").ConfigureAwait(false) ?? [];
+            return await httpClient.GetFromJsonAsync<Person[]>($"/people?page={currentPage}&size={pageSize}&sort={sort}&desc={isSortDesc}").ConfigureAwait(false) ?? [];
         }
 
         public Task<Person?> GetPersonAsync(int id)
@@ -56,7 +56,8 @@ namespace BlazorSamples.Shared
         public async Task<CalendarActions?> TypeChatAsync(ChatRequest request)
         {
             var response = await httpClient.PostAsJsonAsync("/type-chat", request).ConfigureAwait(false);
-            return await response.Content.ReadFromJsonAsync<CalendarActions>().ConfigureAwait(false);
+            var calendarActions = await response.Content.ReadFromJsonAsync<CalendarActions>().ConfigureAwait(false);
+            return calendarActions;
         }
     }
 }

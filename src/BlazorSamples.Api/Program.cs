@@ -159,7 +159,11 @@ foreach (var personKvp in people)
 
 const int defaultPageSize = 10;
 
-app.MapGet("/people", ([FromQuery(Name = "page")] int? currentPage, [FromQuery(Name = "size")] int? pageSize, [FromQuery(Name = "sort")] string? sort) =>
+app.MapGet("/people", (
+    [FromQuery(Name = "page")] int? currentPage,
+    [FromQuery(Name = "size")] int? pageSize,
+    [FromQuery(Name = "sort")] string? sort,
+    [FromQuery(Name = "desc")] bool desc) =>
 {
     var results = people.Values.AsEnumerable();
     switch (sort)
@@ -173,7 +177,12 @@ app.MapGet("/people", ([FromQuery(Name = "page")] int? currentPage, [FromQuery(N
          case "age":
             results = results.OrderBy(p => p.Age);
             break;
-    }   
+    }
+
+    if (desc)
+    {
+        results = results.Reverse();
+    }
 
     if (currentPage.HasValue)
     {
