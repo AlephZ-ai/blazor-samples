@@ -2,7 +2,7 @@
 @using BlazorSamples.Shared
 @page "/chat-stream"
 @attribute [StreamRendering]
-@rendermode @(new InteractiveServerRenderMode(prerender: true))
+@rendermode @(new InteractiveAutoRenderMode(prerender: true))
 @inject ApiClient Api
 
 <PageTitle>Chat Stream</PageTitle>

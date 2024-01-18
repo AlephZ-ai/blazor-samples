@@ -27,6 +27,9 @@ using static Google.Apis.Requests.BatchRequest;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Http.Features;
+using System.Text;
+using System.Text.Json;
+using Aspire.Hosting.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 var aiModel = "gpt-3.5-turbo-1106";
@@ -364,18 +367,16 @@ Everytime you use a plugin, you will be prompted to chat with me about your expe
 .WithName("KernelPlugins")
 .WithOpenApi();
 
-app.MapPost("/chat-stream", (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
+app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
 {
-    var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>();
-    bodyFeature?.DisableBuffering();
-    return ChatStreamAsync(request, openAI, cancellationToken);
+    await ChatStreamAsync(context, request, openAI, cancellationToken);
 })
 .WithName("ChatStream")
 .WithOpenApi();
 
 app.Run();
 
-async IAsyncEnumerable<ChatResponse> ChatStreamAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken cancellationToken)
+async Task ChatStreamAsync(HttpContext context, ChatRequest request, OpenAIClient openAI, CancellationToken cancellationToken)
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
@@ -389,17 +390,30 @@ async IAsyncEnumerable<ChatResponse> ChatStreamAsync(ChatRequest request, OpenAI
         }
     };
 
+    context.Response.StatusCode = StatusCodes.Status200OK;
+    context.Response.ContentType = "application/json";
+    context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+    context.Response.Headers["Pragma"] = "no-cache";
+    context.Response.Headers["Expires"] = "-1";
+    var r = context.Features.Get<IHttpResponseBodyFeature>()!;
+    r.DisableBuffering();
+    await r.StartAsync(cancellationToken).ConfigureAwait(false);
+    await using var rs = r.Stream;
+    await using var w = new Utf8JsonWriter(rs);
+    w.WriteStartArray();
     var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
-    await foreach (var response in responseStream)
+    await foreach (var response in responseStream.WithCancellation(cancellationToken))
     {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-
-        yield return new ChatResponse { Message = response.ContentUpdate };
-        await Task.Delay(1);
+        cancellationToken.ThrowIfCancellationRequested();
+        w.WriteStartObject();
+        w.WriteString("message", response.ContentUpdate);
+        w.WriteEndObject();
+        await w.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    w.WriteEndArray();
+    await w.FlushAsync(cancellationToken).ConfigureAwait(false);
+    await r.CompleteAsync().ConfigureAwait(false);
 }
 
 string GetOpenAIKey(IConfiguration configuration)
