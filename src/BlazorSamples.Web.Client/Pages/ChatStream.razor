@@ -1,0 +1,45 @@
+﻿@using System.Text.Json
+@using BlazorSamples.Shared
+@page "/chat-stream"
+@attribute [StreamRendering]
+@rendermode @(new InteractiveServerRenderMode(prerender: true))
+@inject ApiClient Api
+
+<PageTitle>Chat Stream</PageTitle>
+
+<h1>Chat Stream</h1>
+
+@if (response is not null)
+{
+    <div>
+        <label>Response</label>
+        <p>@response.Message</p>
+    </div>
+}
+
+<p>Ask question</p>
+
+<EditForm Model="request" OnSubmit="SubmitAsync">
+    <div class="form-group">
+        <label for="Message">Question</label>
+        <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Send</button>
+</EditForm>
+
+@code {
+    private ChatRequest request = new() { Message = "I need to get my tires changed from 12:00 to 2:00 pm on Friday March 15, 2024" };
+    private ChatResponse? response;
+
+    private async Task SubmitAsync()
+    {
+        response = new ChatResponse();
+        response.Message = "";
+        await foreach (var partial in Api.ChatStream(request))
+        {
+            response.Message += partial.Message;
+            StateHasChanged();
+        }
+    }
+}

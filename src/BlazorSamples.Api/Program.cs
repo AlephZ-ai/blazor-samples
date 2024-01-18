@@ -22,6 +22,11 @@ using Microsoft.Graph.ExternalConnectors;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Azure.Core;
+using static Google.Apis.Requests.BatchRequest;
+using System.Threading;
+using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 var aiModel = "gpt-3.5-turbo-1106";
@@ -237,7 +242,7 @@ app.MapGet("/people", (
 .WithName("GetPeople")
 .WithOpenApi();
 
-app.MapGet("/person/{id:int}", (int id) =>
+app.MapGet("/person/{id:int}", ([FromRoute] int id) =>
 {
     return people[id];
 })
@@ -254,7 +259,7 @@ app.MapPost("/person", (Person person) =>
 .WithName("CreatePerson")
 .WithOpenApi();
 
-app.MapPut("/person/{id:int}", (Person person, int id) =>
+app.MapPut("/person/{id:int}", ([FromBody] Person person, [FromRoute] int id) =>
 {
     person.Id = id;
     people[id] = person;
@@ -263,14 +268,14 @@ app.MapPut("/person/{id:int}", (Person person, int id) =>
 .WithName("UpdatePerson")
 .WithOpenApi();
 
-app.MapDelete("/person/{id:int}", (int id) =>
+app.MapDelete("/person/{id:int}", ([FromRoute] int id) =>
 {
     return people.Remove(id);
 })
 .WithName("DeletePerson")
 .WithOpenApi();
 
-app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient openAI) =>
+app.MapPost("/chat", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI) =>
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
@@ -290,7 +295,7 @@ app.MapPost("/chat", async (ChatRequest request, [FromServices] OpenAIClient ope
 .WithName("Chat")
 .WithOpenApi();
 
-app.MapPost("/kernel", async (ChatRequest request, [FromServices] Kernel kernel) =>
+app.MapPost("/kernel", async ([FromBody] ChatRequest request, [FromServices] Kernel kernel) =>
 {
     var promptTemplate = @"{{$input}}
 
@@ -302,7 +307,7 @@ Respond like you are a helpful assistant and you will talk like a pirate.";
 .WithName("Kernel")
 .WithOpenApi();
 
-app.MapPost("/type-chat", async (ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator) =>
+app.MapPost("/type-chat", async ([FromBody] ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator) =>
 {
     // Translate natural language request 
     var actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
@@ -311,7 +316,7 @@ app.MapPost("/type-chat", async (ChatRequest request, [FromServices] JsonTransla
 .WithName("TypeChat")
 .WithOpenApi();
 
-app.MapPost("/kernel-plugins", async (ChatRequest request, [FromServices] OpenAIClient openAI) =>
+app.MapPost("/kernel-plugins", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI) =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
     kernelBuilder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
@@ -359,7 +364,43 @@ Everytime you use a plugin, you will be prompted to chat with me about your expe
 .WithName("KernelPlugins")
 .WithOpenApi();
 
+app.MapPost("/chat-stream", (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
+{
+    var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>();
+    bodyFeature?.DisableBuffering();
+    return ChatStreamAsync(request, openAI, cancellationToken);
+})
+.WithName("ChatStream")
+.WithOpenApi();
+
 app.Run();
+
+async IAsyncEnumerable<ChatResponse> ChatStreamAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken cancellationToken)
+{
+    var chatCompletionsOptions = new ChatCompletionsOptions()
+    {
+        DeploymentName = aiModel, // Use DeploymentName for "model" with non-Azure clients
+        Messages =
+        {
+            // The system message represents instructions or other guidance about how the assistant should behave
+            new ChatRequestSystemMessage("You are a helpful assistant. You will talk like a pirate."),
+            // User messages represent current or historical input from the end user
+            new ChatRequestUserMessage(request.Message),
+        }
+    };
+
+    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
+    await foreach (var response in responseStream)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        yield return new ChatResponse { Message = response.ContentUpdate };
+        await Task.Delay(1);
+    }
+}
 
 string GetOpenAIKey(IConfiguration configuration)
 {

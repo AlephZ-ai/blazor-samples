@@ -12,6 +12,7 @@ namespace BlazorSamples.Shared
         public async Task<ChatResponse?> TypeKernelAsync(ChatRequest request)
         {
             var response = await httpClient.PostAsJsonAsync("/type-kernel", request).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
         }
     }
