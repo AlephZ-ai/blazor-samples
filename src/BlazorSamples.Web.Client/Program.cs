@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using BlazorSamples.Shared;
 using Microsoft.Extensions.Hosting;
+using Whisper.net.Ggml;
+using Whisper.net;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();

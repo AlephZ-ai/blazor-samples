@@ -1,7 +1,7 @@
 ﻿@using System.Text.Json
 @using BlazorSamples.Shared
 @page "/chat"
-@rendermode @(new InteractiveAutoRenderMode(prerender: true))
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @inject ApiClient Api
 @inject LegacyApiClient LegacyApi
 
