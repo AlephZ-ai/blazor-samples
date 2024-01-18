@@ -369,15 +369,6 @@ Everytime you use a plugin, you will be prompted to chat with me about your expe
 
 app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
 {
-    await ChatStreamAsync(context, request, openAI, cancellationToken);
-})
-.WithName("ChatStream")
-.WithOpenApi();
-
-app.Run();
-
-async Task ChatStreamAsync(HttpContext context, ChatRequest request, OpenAIClient openAI, CancellationToken cancellationToken)
-{
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
         DeploymentName = aiModel, // Use DeploymentName for "model" with non-Azure clients
@@ -414,6 +405,41 @@ async Task ChatStreamAsync(HttpContext context, ChatRequest request, OpenAIClien
     w.WriteEndArray();
     await w.FlushAsync(cancellationToken).ConfigureAwait(false);
     await r.CompleteAsync().ConfigureAwait(false);
+})
+.WithName("ChatStream")
+.WithOpenApi();
+
+app.MapPost("/chat-stream-broken", (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
+{
+    var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>();
+    bodyFeature?.DisableBuffering();
+    return ChatStreamBrokenAsync(request, openAI, cancellationToken);
+})
+.WithName("ChatStreamBroken")
+.WithOpenApi();
+
+app.Run();
+
+async IAsyncEnumerable<ChatResponse> ChatStreamBrokenAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken cancellationToken)
+{
+    var chatCompletionsOptions = new ChatCompletionsOptions()
+    {
+        DeploymentName = aiModel, // Use DeploymentName for "model" with non-Azure clients
+        Messages =
+        {
+            // The system message represents instructions or other guidance about how the assistant should behave
+            new ChatRequestSystemMessage("You are a helpful assistant. You will talk like a pirate."),
+            // User messages represent current or historical input from the end user
+            new ChatRequestUserMessage(request.Message),
+        }
+    };
+
+    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
+    await foreach (var response in responseStream)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        yield return new ChatResponse { Message = response.ContentUpdate };
+    }
 }
 
 string GetOpenAIKey(IConfiguration configuration)

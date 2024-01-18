@@ -5,9 +5,18 @@
 @rendermode @(new InteractiveAutoRenderMode(prerender: true))
 @inject ApiClient Api
 
-<PageTitle>Chat Stream</PageTitle>
+@if (!isChecked)
+{
+    <PageTitle>Chat Stream</PageTitle>
 
-<h1>Chat Stream</h1>
+    <h1>Chat Stream</h1>
+}
+else
+{
+    <PageTitle>Chat Stream Broken</PageTitle>
+
+    <h1>Chat Stream Broken</h1>
+}
 
 @if (response is not null)
 {
@@ -16,6 +25,11 @@
         <p>@response.Message</p>
     </div>
 }
+
+<div>
+    <input type="checkbox" checked="@isChecked" @oninput="CheckboxChanged" />
+    <label>Broken</label>
+</div>
 
 <p>Ask question</p>
 
@@ -29,6 +43,7 @@
 </EditForm>
 
 @code {
+    private bool isChecked = false;
     private ChatRequest request = new() { Message = "I need to get my tires changed from 12:00 to 2:00 pm on Friday March 15, 2024" };
     private ChatResponse? response;
 
@@ -36,10 +51,25 @@
     {
         response = new ChatResponse();
         response.Message = "";
-        await foreach (var partial in Api.ChatStream(request))
+        IAsyncEnumerable<ChatResponse?>? partials;
+        if (!isChecked)
         {
-            response.Message += partial.Message;
+            partials = Api.ChatStream(request);
+        }
+        else
+        {
+            partials = Api.ChatStreamBroken(request);
+        }
+
+        await foreach (var partial in partials)
+        {
+            response.Message += partial!.Message;
             StateHasChanged();
         }
+    }
+
+    private void CheckboxChanged(ChangeEventArgs e)
+    {
+        isChecked = !isChecked;
     }
 }

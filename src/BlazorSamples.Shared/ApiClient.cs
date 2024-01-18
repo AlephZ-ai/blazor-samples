@@ -86,5 +86,14 @@ namespace BlazorSamples.Shared
                 yield return chatResponse;
             }
         }
+        public async IAsyncEnumerable<ChatResponse?> ChatStreamBroken(ChatRequest request)
+        {
+            var response = await httpClient.PostAsJsonAsync("/chat-stream-broken", request);
+            response.EnsureSuccessStatusCode();
+            await foreach (var chatResponse in response.Content.ReadFromJsonAsAsyncEnumerable<ChatResponse>())
+            {
+                yield return chatResponse;
+            }
+        }
     }
 }
