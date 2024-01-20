@@ -7,25 +7,49 @@ namespace BlazorSamples.Web.Hubs
 {
     public class SpeechToTextHub(VoskRecognizer recognizer) : Hub<ISpeechToTextClient>
     {
+        static FileStream stream = default!;
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType, int sampleRate, int channels)
         {
-            string message;
-            if (recognizer.AcceptWaveform(buffer, buffer.Length))
+            // string message;
+            // if (recognizer.AcceptWaveform(buffer, buffer.Length))
+            // {
+            //     message = recognizer.Result();
+            // }
+            // else
+            // {
+            //     message = recognizer.PartialResult();
+            // }
+
+            // await Clients.Caller.ReceiveMessage(message);
+
+            // if (position == BufferPosition.Last)
+            // {
+            //     message = recognizer.FinalResult();
+            //     await Clients.Caller.ReceiveMessage(message);
+            // }
+            var localFileName = $"Files/temp.{mimeType.Substring(6)}";
+
+            // Delete file if it exists and this the first buffer
+            if (position == BufferPosition.First)
             {
-                message = recognizer.Result();
-            }
-            else
-            {
-                message = recognizer.PartialResult();
+                if (File.Exists(localFileName))
+                    File.Delete(localFileName);
+
+                if (!Directory.Exists("Files"))
+                    Directory.CreateDirectory("Files");
+
+                stream = File.OpenWrite(localFileName);
             }
 
-            await Clients.Caller.ReceiveMessage(message);
-
+            stream.Write(buffer);
             if (position == BufferPosition.Last)
             {
-                message = recognizer.FinalResult();
-                await Clients.Caller.ReceiveMessage(message);
+                await stream.FlushAsync();
+                stream.Close();
+                stream.Dispose();
             }
+
+            await Clients.Caller.ReceiveMessage(buffer.Length.ToString());
         }
     }
 }
