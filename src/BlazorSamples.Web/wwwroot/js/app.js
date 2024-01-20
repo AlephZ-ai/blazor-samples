@@ -9996,7 +9996,10 @@ async function startRecording(page, deviceId) {
     let stopped = false;
     recorder.addEventListener("dataavailable", async (e) => {
       const buffer = await e.data.arrayBuffer();
-      const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+      const uint8Array = new Uint8Array(buffer);
+      const numericArray = Array.from(uint8Array);
+      const binaryString = String.fromCharCode.apply(null, numericArray);
+      const base64 = btoa(binaryString);
       await page.invokeMethodAsync("DataAvailable", base64);
       if (stopped) {
         await page.invokeMethodAsync("RecordingStopped");
@@ -10012,9 +10015,11 @@ async function startRecording(page, deviceId) {
   return mimeType;
 }
 function stopRecording() {
-  recorder.stop();
-  recorder.stream.getTracks().forEach((track) => track.stop());
-  recorder = null;
+  if (recorder) {
+    recorder.stop();
+    recorder.stream.getTracks().forEach((track) => track.stop());
+    recorder = null;
+  }
 }
 export {
   getAudioInputDevices,

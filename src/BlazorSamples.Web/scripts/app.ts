@@ -1,8 +1,7 @@
 ﻿import { MediaRecorder, register } from 'extendable-media-recorder';
 import { connect } from 'extendable-media-recorder-wav-encoder';
 await register(await connect());
-// TODO: Fix any type to MediaRecorder, https://github.com/chrisguttandin/extendable-media-recorder causing issues
-let recorder: any;
+let recorder: MediaRecorder | null;
 export interface BrowserMediaDevice {
     DeviceId: string;
     Label: string;
@@ -35,7 +34,7 @@ export async function requestMicrophonePermission(): Promise<boolean> {
     }
 }
 
-export function getSupportedMimeType(): string {
+export function getSupportedMimeType(): string | null {
     // audio/webm=chrome/edge/firefox, audio/mp4=safari
     const types: string[] = ['audio/wav'];
     for (const type of types) {
@@ -47,18 +46,20 @@ export function getSupportedMimeType(): string {
     return null;
 }
 
-// TODO: Fix to reference blazor.d.ts and use DotNet.DotNetObject instead of any for page
-export async function startRecording(page: any, deviceId: string): Promise<string> {
-    const mimeType: string = getSupportedMimeType();
+export async function startRecording(page: DotNet.DotNetObject, deviceId: string): Promise<string | null> {
+    const mimeType: string | null = getSupportedMimeType();
     if (mimeType) {
         const constraints: MediaStreamConstraints = { audio: { deviceId: deviceId, channelCount: 1 } };
         const options: MediaRecorderOptions = { mimeType: mimeType, audioBitsPerSecond: 16000 };
         const stream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-        recorder = new MediaRecorder(stream, options)
+        recorder = new MediaRecorder(stream, options) as MediaRecorder
         let stopped: boolean = false;
         recorder.addEventListener('dataavailable', async (e: BlobEvent) => {
             const buffer: ArrayBuffer = await e.data.arrayBuffer();
-            const base64: string = btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+            const uint8Array = new Uint8Array(buffer);
+            const numericArray = Array.from(uint8Array);
+            const binaryString = String.fromCharCode.apply(null, numericArray);
+            const base64 = btoa(binaryString);
             await page.invokeMethodAsync("DataAvailable", base64);
             if (stopped) {
                 await page.invokeMethodAsync("RecordingStopped");
@@ -79,7 +80,9 @@ export async function startRecording(page: any, deviceId: string): Promise<strin
 
 // TODO: Check if mic still hangs open in Mac
 export function stopRecording(): void {
-    recorder.stop();
-    recorder.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-    recorder = null;
+    if (recorder) {
+        recorder.stop();
+        recorder.stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+        recorder = null;
+    }
 }
