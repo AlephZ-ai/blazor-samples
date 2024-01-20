@@ -8,12 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.1.0" />
     <PackageReference Include="KristofferStrube.Blazor.WebAudio" Version="0.1.0-alpha.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.1.0" />
-    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery"
-      Version="8.0.0-preview.2.23619.3" />
+    <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="8.0.0-preview.2.23619.3" />
     <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.3.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -27,8 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference
-      Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
     <ProjectReference Include="..\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
     <ProjectReference Include="..\BlazorSamples.Web.Client\BlazorSamples.Web.Client.csproj" />
   </ItemGroup>
@@ -37,13 +36,11 @@
     <Exec Command="npm install" />
   </Target>
 
-  <Target Name="NPM Debug Build" AfterTargets="NPM Install"
-    Condition="$(Configuration) == 'Debug'">
+  <Target Name="NPM Debug Build" AfterTargets="NPM Install" Condition="$(Configuration) == 'Debug'">
     <Exec Command="npm run debugBuild" />
   </Target>
 
-  <Target Name="NPM Release Build" AfterTargets="NPM Install"
-    Condition="$(Configuration) == 'Release'">
+  <Target Name="NPM Release Build" AfterTargets="NPM Install" Condition="$(Configuration) == 'Release'">
     <Exec Command="npm run releaseBuild" />
   </Target>
 </Project>
