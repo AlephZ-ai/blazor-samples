@@ -7,7 +7,7 @@ namespace BlazorSamples.ScratchConsole
 {
     public static class VoskProgram
     {
-        static string models = "models";
+        static string models = ".models";
         static string voskModels = $"{models}/vosk";
         public static void Main()
         {

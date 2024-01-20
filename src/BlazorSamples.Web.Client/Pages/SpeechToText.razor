@@ -16,7 +16,6 @@
 <button disabled="@IsStartRecordingButtonDisabled" class="btn btn-primary" @onclick="StartRecording">Start Recording</button>
 <button disabled="@IsStopRecordingButtonDisabled" class="btn btn-primary" @onclick="StopRecording">Stop Recording</button>
 <p>@Status</p>
-<p>@lastUpdated</p>
 <p>mime: @mimeType</p>
 
 <h5>Input Devices</h5>
@@ -28,8 +27,10 @@
     }
 </InputSelect>
 
+<p>@message</p>
+
 @code {
-    private DateTime lastUpdated = DateTime.Now;
+    private string message = string.Empty;
     private string? selectedDeviceId;
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
     private bool disableButtons = false;
@@ -40,6 +41,7 @@
     private bool IsStopRecordingButtonDisabled => disableButtons || !HasAudioInputDevices || !isRecording;
     private bool IsDeviceSelectionDisabled => IsStartRecordingButtonDisabled;
     private string mimeType = default!;
+    private BufferPosition bufferPosition = BufferPosition.First;
     private DotNetObjectReference<SpeechToText> thisJS = default!;
     private HubConnection? hub;
 
@@ -54,6 +56,8 @@
         if (!isRecording)
         {
             disableButtons = true;
+            message = string.Empty;
+            bufferPosition = BufferPosition.First;
             StateHasChanged();
 
             await CheckConnection();
@@ -68,6 +72,7 @@
         if (isRecording)
         {
             disableButtons = true;
+            bufferPosition = BufferPosition.Last;
             StateHasChanged();
             await JS.InvokeVoidAsync("stopRecording", thisJS);
         }
@@ -83,10 +88,11 @@
         }
     }
 
-    public async Task ReceiveMessage(DateTime now)
+    public Task ReceiveMessage(string message)
     {
-        lastUpdated = now;
+        this.message = message;
         StateHasChanged();
+        return Task.CompletedTask;
     }
 
     [JSInvokable]
@@ -106,7 +112,13 @@
     public async Task DataAvailable(byte[] buffer)
     {
         await CheckConnection();
-        await hub.SendAsync("ProcessAudioBuffer", buffer, BufferPosition.First, mimeType, 16000, 1);
+        if (hub is not null)
+        {
+            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType, 16000, 1);
+        }
+ 
+        if(bufferPosition == BufferPosition.First)
+            bufferPosition = BufferPosition.Middle;
     }
 
     public async ValueTask DisposeAsync()
@@ -129,7 +141,7 @@
                 .WithUrl(Navigation.ToAbsoluteUri("/speechtotext"))
                 .Build();
 
-            hub.On<DateTime>("ReceiveMessage", now => ReceiveMessage(now));
+            hub.On<string>("ReceiveMessage", ReceiveMessage);
         }
 
         if (hub.State != HubConnectionState.Connected)

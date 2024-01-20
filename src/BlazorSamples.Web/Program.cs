@@ -4,6 +4,16 @@ using BlazorSamples.Web.Client.Pages;
 using BlazorSamples.Web.Components;
 using BlazorSamples.Web.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
+using Vosk;
+
+string models = ".models";
+string voskModels = $"{models}/vosk";
+var model = "vosk-model-en-us-0.22";
+var modelSpk = "vosk-model-spk-0.4";
+await DownloadVoskModelAsync(model);
+await DownloadVoskModelAsync(modelSpk);
+Vosk.Vosk.SetLogLevel(0);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +29,19 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
 builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
+builder.Services.AddSingleton(sp => new Model($"{voskModels}/{model}"));
+builder.Services.AddSingleton(sp => new SpkModel($"{voskModels}/{modelSpk}"));
+// TODO: Create a recoginzer per client in the signalr hub
+builder.Services.AddSingleton(sp =>
+{
+    var model = sp.GetRequiredService<Model>();
+    var spkModel = sp.GetRequiredService<SpkModel>();
+    var rec = new VoskRecognizer(model, 16000.0f);
+    rec.SetSpkModel(new SpkModel($"{voskModels}/{modelSpk}"));
+    rec.SetMaxAlternatives(0);
+    rec.SetWords(true);
+    return rec;
+});
 
 var app = builder.Build();
 
@@ -48,3 +71,24 @@ app.MapRazorComponents<App>()
 
 app.MapHub<SpeechToTextHub>("/speechtotext");
 app.Run();
+
+async Task DownloadVoskModelAsync(string model)
+{
+    var modelPath = $"{voskModels}/{model}";
+    var zipFile = $"{voskModels}/{model}.zip";
+    var url = $"https://alphacephei.com/vosk/models/{model}.zip";
+    if (!Directory.Exists(modelPath))
+    {
+        Console.WriteLine($"Downloading Model {model}");
+        if (!Directory.Exists(models)) Directory.CreateDirectory(models);
+        if (!Directory.Exists(voskModels)) Directory.CreateDirectory(voskModels);
+        Directory.CreateDirectory(modelPath);
+        using var client = new HttpClient();
+        using var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsByteArrayAsync();
+        await File.WriteAllBytesAsync(zipFile, content);
+        ZipFile.ExtractToDirectory(zipFile, voskModels);
+        File.Delete(zipFile);
+    }
+}

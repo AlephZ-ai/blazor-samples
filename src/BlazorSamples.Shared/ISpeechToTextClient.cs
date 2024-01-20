@@ -8,6 +8,6 @@ namespace BlazorSamples.Shared
 {
     public interface ISpeechToTextClient
     {
-        Task ReceiveMessage(DateTime now);
+        Task ReceiveMessage(string message);
     }
 }

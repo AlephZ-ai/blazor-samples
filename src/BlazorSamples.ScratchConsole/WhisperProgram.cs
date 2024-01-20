@@ -12,7 +12,7 @@ namespace BlazorSamples.ScratchConsole
 {
     public static class WhisperProgram
     {
-        static string models = "models";
+        static string models = ".models";
         static string whisperModels = $"{models}/whisper";
         public static void Main()
         {

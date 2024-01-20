@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "target": "ES2017",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "include": [
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "wwwroot",
+    "**/*.spec.ts"
+  ]
+}
