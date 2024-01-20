@@ -59,6 +59,7 @@
         }
 
         await RefreshDevices();
+        StateHasChanged();
     }
 
     async Task StartRecording()
@@ -96,6 +97,7 @@
             var devices = await module.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
             devices = devices.Where(device => device is not null && device.DeviceId is not null).ToList();
             AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
+            StateHasChanged();
         }
     }
 
