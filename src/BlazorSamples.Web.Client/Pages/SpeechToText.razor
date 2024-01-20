@@ -1,5 +1,11 @@
-﻿@page "/speech-to-text"
-@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+﻿@using Microsoft.AspNetCore.SignalR.Client;
+@using BlazorSamples.Shared;
+@page "/speech-to-text"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements ISpeechToTextClient
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <PageTitle>Speech to Text</PageTitle>
 
@@ -7,6 +13,126 @@
 
 <p>This component demonstrates speech to text.</p>
 
-@code {
+<button disabled="@IsStartRecordingButtonDisabled" class="btn btn-primary" @onclick="StartRecording">Start Recording</button>
+<button disabled="@IsStopRecordingButtonDisabled" class="btn btn-primary" @onclick="StopRecording">Stop Recording</button>
+<p>@Status</p>
+<p>@lastUpdated</p>
+<p>mime: @mimeType</p>
 
+<h5>Input Devices</h5>
+<button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
+<InputSelect disabled="@IsDeviceSelectionDisabled" @bind-Value="selectedDeviceId">
+    @foreach (var device in AudioInputDevices)
+    {
+        <option value="@device.DeviceId">@device.Label</option>
+    }
+</InputSelect>
+
+@code {
+    private DateTime lastUpdated = DateTime.Now;
+    private string? selectedDeviceId;
+    private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
+    private bool disableButtons = false;
+    private bool isRecording = false;
+    private string Status => isRecording ? "Recording" : "Ready";
+    private bool HasAudioInputDevices => AudioInputDevices.Count != 0;
+    private bool IsStartRecordingButtonDisabled => disableButtons || !HasAudioInputDevices || isRecording;
+    private bool IsStopRecordingButtonDisabled => disableButtons || !HasAudioInputDevices || !isRecording;
+    private bool IsDeviceSelectionDisabled => IsStartRecordingButtonDisabled;
+    private string mimeType = default!;
+    private DotNetObjectReference<SpeechToText> thisJS = default!;
+    private HubConnection? hub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        thisJS = DotNetObjectReference.Create(this);
+        await RefreshDevices();
+    }
+
+    async Task StartRecording()
+    {
+        if (!isRecording)
+        {
+            disableButtons = true;
+            StateHasChanged();
+
+            await CheckConnection();
+            mimeType = await JS.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
+            isRecording = true;
+            disableButtons = false;
+        }
+    }
+
+    async Task StopRecording()
+    {
+        if (isRecording)
+        {
+            disableButtons = true;
+            StateHasChanged();
+            await JS.InvokeVoidAsync("stopRecording", thisJS);
+        }
+    }
+
+    async Task RefreshDevices()
+    {
+        if (await JS.InvokeAsync<bool>("requestMicrophonePermission"))
+        {
+            var devices = await JS.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
+            devices = devices.Where(device => device is not null && device.DeviceId is not null).ToList();
+            AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
+        }
+    }
+
+    public async Task ReceiveMessage(DateTime now)
+    {
+        lastUpdated = now;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task RecordingStopped()
+    {
+        isRecording = false;
+        disableButtons = false;
+        StateHasChanged();
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+            hub = null;
+        }
+    }
+
+    [JSInvokable]
+    public async Task DataAvailable(byte[] buffer)
+    {
+        await CheckConnection();
+        await hub.SendAsync("ProcessAudioBuffer", buffer, BufferPosition.First, mimeType, 16000, 1);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopRecording();
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+            hub = null;
+        }
+
+        thisJS.Dispose();
+    }
+
+    private async Task CheckConnection()
+    {
+        if (hub is null)
+        {
+            hub = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/speechtotext"))
+                .Build();
+
+            hub.On<DateTime>("ReceiveMessage", now => ReceiveMessage(now));
+        }
+
+        if (hub.State != HubConnectionState.Connected)
+            await hub.StartAsync();
+    }
 }

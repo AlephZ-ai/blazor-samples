@@ -4,6 +4,8 @@ using Microsoft.Extensions.Hosting;
 using KristofferStrube.Blazor.MediaCaptureStreams;
 using KristofferStrube.Blazor.WebIDL;
 using BlazorFileSaver;
+using Microsoft.AspNetCore.SignalR.Client;
+using System;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();

@@ -2,10 +2,15 @@ using BlazorFileSaver;
 using BlazorSamples.Shared;
 using BlazorSamples.Web.Client.Pages;
 using BlazorSamples.Web.Components;
+using BlazorSamples.Web.Hubs;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddSignalR();
+
+builder.Services.AddResponseCompression(opts => opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -17,6 +22,7 @@ builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = n
 
 var app = builder.Build();
 
+app.UseResponseCompression();
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
@@ -40,4 +46,5 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(BlazorSamples.Web.Client._Imports).Assembly);
 
+app.MapHub<SpeechToTextHub>("/speechtotext");
 app.Run();
