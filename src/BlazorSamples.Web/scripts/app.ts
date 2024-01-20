@@ -68,7 +68,7 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
             stopped = true;
         });
 
-        recorder.start(1000);
+        recorder.start(500);
     } else {
         console.error('No supported audio formats found');
     }

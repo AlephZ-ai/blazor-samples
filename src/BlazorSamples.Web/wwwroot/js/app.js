@@ -51,7 +51,7 @@ async function startRecording(page, deviceId) {
     recorder.addEventListener("stop", () => {
       stopped = true;
     });
-    recorder.start(1e3);
+    recorder.start(500);
   } else {
     console.error("No supported audio formats found");
   }

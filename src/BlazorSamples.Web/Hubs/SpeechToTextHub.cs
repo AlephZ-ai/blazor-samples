@@ -5,6 +5,8 @@ using Vosk;
 
 namespace BlazorSamples.Web.Hubs
 {
+    // TODO: Need to fix singleton and static hacks
+    // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
     public class SpeechToTextHub(VoskRecognizer recognizer) : Hub<ISpeechToTextClient>
     {
         static FileStream stream = default!;
