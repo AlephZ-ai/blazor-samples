@@ -59,12 +59,14 @@ async function startRecording(dotNetObject, deviceId) {
 
         window.stopRecording = stopRecording;
         recorder.start(1000);
-        return recorder;
     } else {
         console.error('No supported audio formats found');
     }
+
+    return mimeType;
 }
 
+// TODO: Mic hangs open in toolbar for at least mac maybe others, fix this
 function stopRecording() {
     recorder.stop();
     recorder.dataavailable = null;

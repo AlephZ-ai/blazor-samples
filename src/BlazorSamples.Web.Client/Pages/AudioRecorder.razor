@@ -14,6 +14,7 @@
 <button disabled="@IsStartRecordingButtonDisabled" class="btn btn-primary" @onclick="StartRecording">Start Recording</button>
 <button disabled="@IsStopRecordingButtonDisabled" class="btn btn-primary" @onclick="StopRecording">Stop Recording</button>
 <p>@Status</p>
+<p>mime: @mimeType</p>
 <p>Bytes: @bytesRecorded</p>
 
 <h5>Input Devices</h5>
@@ -26,7 +27,7 @@
 </InputSelect>
 
 @code {
-    private string fileName = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\temp.webm";
+    private string fileName = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\temp.tmp";
     private FileStream? fileStream;
     private int bytesRecorded = 0;
     private string? selectedDeviceId;
@@ -38,6 +39,7 @@
     private bool IsStartRecordingButtonDisabled => disableButtons || !HasAudioInputDevices || isRecording;
     private bool IsStopRecordingButtonDisabled => disableButtons || !HasAudioInputDevices || !isRecording;
     private bool IsDeviceSelectionDisabled => IsStartRecordingButtonDisabled;
+    private string mimeType = default!;
     private DotNetObjectReference<AudioRecorder> thisJS = default!;
 
     protected override async Task OnInitializedAsync()
@@ -58,7 +60,7 @@
                 File.Delete(fileName);
 
             fileStream = File.OpenWrite(fileName);
-            await JS.InvokeVoidAsync("startRecording", thisJS, selectedDeviceId);
+            mimeType = await JS.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
             isRecording = true;
             disableButtons = false;
         }
@@ -96,7 +98,7 @@
             fileStream.Dispose();
             fileStream = null;
             var bytes = await File.ReadAllBytesAsync(fileName);
-            await BlazorFileSaver.SaveAsBase64("Recorded.webm", Convert.ToBase64String(bytes), "audio/webm"); 
+            await BlazorFileSaver.SaveAsBase64($"recorded.{mimeType.Substring(6)}", Convert.ToBase64String(bytes), mimeType); 
         }
     }
 
