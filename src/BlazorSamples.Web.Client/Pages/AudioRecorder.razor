@@ -1,0 +1,51 @@
+﻿@page "/audio-recorder"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using KristofferStrube.Blazor.WebAudio;
+@using KristofferStrube.Blazor.MediaCaptureStreams;
+@using KristofferStrube.Blazor.DOM;
+@inject IJSRuntime JSRuntime
+@inject IMediaDevicesService MediaDevicesService
+
+<PageTitle>Audio Recorder</PageTitle>
+
+<h1>Audio Recorder</h1>
+
+<p>This component demonstrates audio recording and playback.</p>
+
+@foreach (var device in audioOptions)
+{
+    <p>@device.label</p>
+}
+
+<button class="btn btn-primary" @onclick="Record">Record</button>
+
+@code {
+    private AudioContext? context;
+    private MediaDevices? devices;
+    private List<(string label, string id)> audioOptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = await AudioContext.CreateAsync(JSRuntime);
+        devices = await MediaDevicesService.GetMediaDevicesAsync();
+        var deviceInfos = await devices.EnumerateDevicesAsync();
+        Console.WriteLine("hello");
+        MediaTrackConstraints mediaTrackConstraints = new MediaTrackConstraints();
+        var x = await devices.GetUserMediaAsync(new MediaStreamConstraints() { Audio = mediaTrackConstraints });
+        foreach (var device in deviceInfos)
+        {
+            Console.WriteLine(await device.GetLabelAsync());
+            if (await device.GetKindAsync() is MediaDeviceKind.AudioInput)
+            {
+                audioOptions.Add((await device.GetLabelAsync(), await device.GetDeviceIdAsync()));
+            }
+        }
+
+        Console.WriteLine("bye");
+    }
+
+    void Record()
+    {
+        
+    }
+}

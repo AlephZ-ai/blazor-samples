@@ -26,13 +26,13 @@ else
 }
 
 <div>
-    <input type="checkbox" checked="@isChecked" @oninput="CheckboxChanged" />
+    <InputCheckbox @bind-Value="isChecked" />
     <label>Broken</label>
 </div>
 
 <p>Ask question</p>
 
-<EditForm Model="request" OnSubmit="SubmitAsync">
+<EditForm Enhance Model="request" OnSubmit="SubmitAsync">
     <div class="form-group">
         <label for="Message">Question</label>
         <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
@@ -65,10 +65,5 @@ else
             response.Message += partial!.Message;
             StateHasChanged();
         }
-    }
-
-    private void CheckboxChanged(ChangeEventArgs e)
-    {
-        isChecked = !isChecked;
     }
 }

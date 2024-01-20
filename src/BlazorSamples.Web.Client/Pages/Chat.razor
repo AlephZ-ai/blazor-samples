@@ -36,25 +36,23 @@ else if (engine == ChatEngine.TypeKernel)
     <h1>Type Kernel</h1>
 }
 
-<input type="radio" checked="@(engine == ChatEngine.OpenAI)"
-    name="Engine" @onchange="@(() => engine = ChatEngine.OpenAI)" />
-<label>OpenAI</label>
+<div>
+    <InputRadioGroup @bind-Value="engine">
+        <InputRadio Value="ChatEngine.OpenAI" /> OpenAI
+        <br />
 
-<input type="radio" checked="@(engine == ChatEngine.SemanticKernel)"
-    name="Engine" @onchange="@(() => engine = ChatEngine.SemanticKernel)" />
-<label>Semantic Engine</label>
+        <InputRadio Value="ChatEngine.SemanticKernel" /> Semantic Engine
+        <br />
 
-<input type="radio" checked="@(engine == ChatEngine.TypeChat)"
-    name="Engine" @onchange="@(() => engine = ChatEngine.TypeChat)" />
-<label>Type Chat</label>
+        <InputRadio Value="ChatEngine.TypeChat" /> Type Chat
+        <br />
 
-<input type="radio" checked="@(engine == ChatEngine.KernelPlugins)"
-    name="Engine" @onchange="@(() => engine = ChatEngine.KernelPlugins)" />
-<label>Kernel Plugins</label>
+        <InputRadio Value="ChatEngine.KernelPlugins" /> Kernel Plugins
+        <br />
 
-<input type="radio" checked="@(engine == ChatEngine.TypeKernel)"
-    name="Engine" @onchange="@(() => engine = ChatEngine.TypeKernel)" />
-<label>Type Kernel</label>
+        <InputRadio Value="ChatEngine.TypeKernel" /> Type Kernel
+    </InputRadioGroup>
+</div>
 
 @if (response is not null)
 {
@@ -66,7 +64,7 @@ else if (engine == ChatEngine.TypeKernel)
 
 <p>Ask question</p>
 
-<EditForm Model="request" OnSubmit="SubmitAsync">
+<EditForm Enhance Model="request" OnSubmit="SubmitAsync">
     <div class="form-group">
         <label for="Message">Question</label>
         <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
