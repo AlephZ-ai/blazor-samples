@@ -19,6 +19,7 @@
     Recording</button>
 <p>@Status</p>
 <p>mime: @mimeType</p>
+<p>Bytes: @bytesRecorded</p>
 
 <h5>Input Devices</h5>
 <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
@@ -32,6 +33,7 @@
 <p>@message</p>
 
 @code {
+    private int bytesRecorded = 0;
     private string message = string.Empty;
     private string? selectedDeviceId;
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
@@ -68,6 +70,7 @@
     {
         if (!isRecording)
         {
+            bytesRecorded = 0;
             disableButtons = true;
             message = string.Empty;
             bufferPosition = BufferPosition.First;
@@ -123,16 +126,19 @@
     }
 
     [JSInvokable]
-    public async Task DataAvailable(byte[] buffer)
+    public async Task DataAvailable(byte[] buffer, string mimeType, int sampleRate, int channelCount)
     {
+        bytesRecorded += buffer.Length;
         await CheckConnection();
         if (hub is not null)
         {
-            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType, 16000, 1);
+            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, bytesRecorded, mimeType, sampleRate, channelCount);
         }
 
         if (bufferPosition == BufferPosition.First)
             bufferPosition = BufferPosition.Middle;
+
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()

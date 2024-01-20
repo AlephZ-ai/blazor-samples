@@ -10,7 +10,7 @@ namespace BlazorSamples.Web.Hubs
     public class SpeechToTextHub(VoskRecognizer recognizer) : Hub<ISpeechToTextClient>
     {
         static FileStream stream = default!;
-        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType, int sampleRate, int channels)
+        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType, int sampleRate, int channelCount)
         {
             // string message;
             // if (recognizer.AcceptWaveform(buffer, buffer.Length))
@@ -51,7 +51,7 @@ namespace BlazorSamples.Web.Hubs
                 stream.Dispose();
             }
 
-            await Clients.Caller.ReceiveMessage(buffer.Length.ToString());
+            await Clients.Caller.ReceiveMessage(p.ToString());
         }
     }
 }

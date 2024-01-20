@@ -1,6 +1,7 @@
 ﻿//import { MediaRecorder, register } from 'extendable-media-recorder';
 //import { connect } from 'extendable-media-recorder-wav-encoder';
 //await register(await connect());
+import audioBufferToWav from 'audiobuffer-to-wav';
 let recorder: MediaRecorder | null;
 export interface BrowserMediaDevice {
     DeviceId: string;
@@ -48,25 +49,33 @@ export function getSupportedMimeType(): string | null {
 }
 
 export async function startRecording(page: DotNet.DotNetObject, deviceId: string): Promise<string | null> {
-    const mimeType: string | null = getSupportedMimeType();
+    let mimeType: string | null = getSupportedMimeType();
     if (mimeType) {
-        const constraints: MediaStreamConstraints = { audio: { deviceId: deviceId, channelCount: 1 } };
-        const options: MediaRecorderOptions = { mimeType: mimeType, audioBitsPerSecond: 16000 };
+        const constraints: MediaStreamConstraints = { audio: { deviceId: deviceId } };
+        const options: MediaRecorderOptions = { mimeType: mimeType };
         const stream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-        recorder = new MediaRecorder(stream, options) as MediaRecorder
+        recorder = new MediaRecorder(stream, options);
+        mimeType = recorder.mimeType;
+        const track: MediaStreamTrack = stream.getAudioTracks()[0];
+        const settings: MediaTrackSettings = track.getSettings();
+        const { channelCount, sampleRate }: MediaTrackSettings = settings;
+        console.log(recorder);
+        console.log(stream);
+        console.log(track);
+        console.log(settings);
         let stopped: boolean = false;
-        recorder.addEventListener('dataavailable', async (e: BlobEvent) => {
-            const buffer: ArrayBuffer = await e.data.arrayBuffer();
-            const uint8Array: Uint8Array = new Uint8Array(buffer);
-            await page.invokeMethodAsync("DataAvailable", uint8Array);
+        recorder.ondataavailable = async (e: BlobEvent) => {
+            const data: ArrayBuffer = await e.data.arrayBuffer();
+            const uint8Array: Uint8Array = new Uint8Array(data);
+            await page.invokeMethodAsync("DataAvailable", uint8Array, "audio/wav", sampleRate, channelCount);
             if (stopped) {
                 await page.invokeMethodAsync("RecordingStopped");
             }
-        });
+        };
 
-        recorder.addEventListener("stop", () => {
+        recorder.onstop = () => {
             stopped = true;
-        });
+        };
 
         recorder.start(500);
     } else {

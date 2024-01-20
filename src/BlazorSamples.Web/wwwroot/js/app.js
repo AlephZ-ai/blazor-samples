@@ -33,24 +33,32 @@ function getSupportedMimeType() {
   return null;
 }
 async function startRecording(page, deviceId) {
-  const mimeType = getSupportedMimeType();
+  let mimeType = getSupportedMimeType();
   if (mimeType) {
-    const constraints = { audio: { deviceId, channelCount: 1 } };
-    const options = { mimeType, audioBitsPerSecond: 16e3 };
+    const constraints = { audio: { deviceId } };
+    const options = { mimeType };
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     recorder = new MediaRecorder(stream, options);
+    mimeType = recorder.mimeType;
+    const track = stream.getAudioTracks()[0];
+    const settings = track.getSettings();
+    const { channelCount, sampleRate } = settings;
+    console.log(recorder);
+    console.log(stream);
+    console.log(track);
+    console.log(settings);
     let stopped = false;
-    recorder.addEventListener("dataavailable", async (e) => {
-      const buffer = await e.data.arrayBuffer();
-      const uint8Array = new Uint8Array(buffer);
-      await page.invokeMethodAsync("DataAvailable", uint8Array);
+    recorder.ondataavailable = async (e) => {
+      const data = await e.data.arrayBuffer();
+      const uint8Array = new Uint8Array(data);
+      await page.invokeMethodAsync("DataAvailable", uint8Array, "audio/wav", sampleRate, channelCount);
       if (stopped) {
         await page.invokeMethodAsync("RecordingStopped");
       }
-    });
-    recorder.addEventListener("stop", () => {
+    };
+    recorder.onstop = () => {
       stopped = true;
-    });
+    };
     recorder.start(500);
   } else {
     console.error("No supported audio formats found");
