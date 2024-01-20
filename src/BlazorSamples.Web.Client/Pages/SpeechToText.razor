@@ -13,8 +13,10 @@
 
 <p>This component demonstrates speech to text.</p>
 
-<button disabled="@IsStartRecordingButtonDisabled" class="btn btn-primary" @onclick="StartRecording">Start Recording</button>
-<button disabled="@IsStopRecordingButtonDisabled" class="btn btn-primary" @onclick="StopRecording">Stop Recording</button>
+<button disabled="@IsStartRecordingButtonDisabled" class="btn btn-primary" @onclick="StartRecording">Start
+    Recording</button>
+<button disabled="@IsStopRecordingButtonDisabled" class="btn btn-primary" @onclick="StopRecording">Stop
+    Recording</button>
 <p>@Status</p>
 <p>mime: @mimeType</p>
 
@@ -43,11 +45,22 @@
     private string mimeType = default!;
     private BufferPosition bufferPosition = BufferPosition.First;
     private DotNetObjectReference<SpeechToText> thisJS = default!;
+    private IJSObjectReference module = default!;
     private HubConnection? hub;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         thisJS = DotNetObjectReference.Create(this);
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
+        }
+
         await RefreshDevices();
     }
 
@@ -61,7 +74,7 @@
             StateHasChanged();
 
             await CheckConnection();
-            mimeType = await JS.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
+            mimeType = await module.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
             isRecording = true;
             disableButtons = false;
         }
@@ -74,15 +87,15 @@
             disableButtons = true;
             bufferPosition = BufferPosition.Last;
             StateHasChanged();
-            await JS.InvokeVoidAsync("stopRecording", thisJS);
+            await module.InvokeVoidAsync("stopRecording", thisJS);
         }
     }
 
     async Task RefreshDevices()
     {
-        if (await JS.InvokeAsync<bool>("requestMicrophonePermission"))
+        if (await module.InvokeAsync<bool>("requestMicrophonePermission"))
         {
-            var devices = await JS.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
+            var devices = await module.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
             devices = devices.Where(device => device is not null && device.DeviceId is not null).ToList();
             AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
         }
@@ -116,8 +129,8 @@
         {
             await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType, 16000, 1);
         }
- 
-        if(bufferPosition == BufferPosition.First)
+
+        if (bufferPosition == BufferPosition.First)
             bufferPosition = BufferPosition.Middle;
     }
 
@@ -130,6 +143,7 @@
             hub = null;
         }
 
+        await module.DisposeAsync();
         thisJS.Dispose();
     }
 
@@ -138,8 +152,8 @@
         if (hub is null)
         {
             hub = new HubConnectionBuilder()
-                .WithUrl(Navigation.ToAbsoluteUri("/speechtotext"))
-                .Build();
+            .WithUrl(Navigation.ToAbsoluteUri("/speechtotext"))
+            .Build();
 
             hub.On<string>("ReceiveMessage", ReceiveMessage);
         }

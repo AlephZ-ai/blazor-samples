@@ -1,6 +1,6 @@
-﻿import { MediaRecorder, register } from 'extendable-media-recorder';
-import { connect } from 'extendable-media-recorder-wav-encoder';
-await register(await connect());
+﻿//import { MediaRecorder, register } from 'extendable-media-recorder';
+//import { connect } from 'extendable-media-recorder-wav-encoder';
+//await register(await connect());
 let recorder: MediaRecorder | null;
 export interface BrowserMediaDevice {
     DeviceId: string;
@@ -36,7 +36,8 @@ export async function requestMicrophonePermission(): Promise<boolean> {
 
 export function getSupportedMimeType(): string | null {
     // audio/webm=chrome/edge/firefox, audio/mp4=safari
-    const types: string[] = ['audio/wav'];
+    //const types: string[] = ['audio/wav'];
+    const types: string[] = ['audio/webm', 'audio/mp4'];
     for (const type of types) {
         if (MediaRecorder.isTypeSupported(type)) {
             return type;
@@ -55,10 +56,13 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
         recorder = new MediaRecorder(stream, options) as MediaRecorder
         let stopped: boolean = false;
         recorder.addEventListener('dataavailable', async (e: BlobEvent) => {
+            // TODO: Figure out TextDecoder
+            // https://learn.microsoft.com/en-us/aspnet/core/blazor/javascript-interoperability/call-javascript-from-dotnet?view=aspnetcore-8.0#javascript-isolation-in-javascript-modules
+            // const decoder = new TextDecoder();
             const buffer: ArrayBuffer = await e.data.arrayBuffer();
-            const uint8Array = new Uint8Array(buffer);
-            const numericArray = Array.from(uint8Array);
-            const binaryString = String.fromCharCode.apply(null, numericArray);
+            const uint8Array: Uint8Array = new Uint8Array(buffer);
+            // TODO: Fix this hack uint8Array as unknown as number[]
+            const binaryString = String.fromCharCode.apply(null, uint8Array as unknown as number[]);
             const base64 = btoa(binaryString);
             await page.invokeMethodAsync("DataAvailable", base64);
             if (stopped) {
@@ -78,7 +82,6 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
     return mimeType;
 }
 
-// TODO: Check if mic still hangs open in Mac
 export function stopRecording(): void {
     if (recorder) {
         recorder.stop();
