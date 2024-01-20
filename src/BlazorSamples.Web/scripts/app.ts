@@ -56,15 +56,9 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
         recorder = new MediaRecorder(stream, options) as MediaRecorder
         let stopped: boolean = false;
         recorder.addEventListener('dataavailable', async (e: BlobEvent) => {
-            // TODO: Figure out TextDecoder
-            // https://learn.microsoft.com/en-us/aspnet/core/blazor/javascript-interoperability/call-javascript-from-dotnet?view=aspnetcore-8.0#javascript-isolation-in-javascript-modules
-            // const decoder = new TextDecoder();
             const buffer: ArrayBuffer = await e.data.arrayBuffer();
             const uint8Array: Uint8Array = new Uint8Array(buffer);
-            // TODO: Fix this hack uint8Array as unknown as number[]
-            const binaryString = String.fromCharCode.apply(null, uint8Array as unknown as number[]);
-            const base64 = btoa(binaryString);
-            await page.invokeMethodAsync("DataAvailable", base64);
+            await page.invokeMethodAsync("DataAvailable", uint8Array);
             if (stopped) {
                 await page.invokeMethodAsync("RecordingStopped");
             }

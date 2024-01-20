@@ -56,10 +56,9 @@
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
+            await RefreshDevices();
+            StateHasChanged();
         }
-
-        await RefreshDevices();
-        StateHasChanged();
     }
 
     async Task StartRecording()
