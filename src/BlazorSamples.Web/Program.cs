@@ -1,3 +1,4 @@
+using BlazorFileSaver;
 using BlazorSamples.Shared;
 using BlazorSamples.Web.Client.Pages;
 using BlazorSamples.Web.Components;
@@ -5,13 +6,14 @@ using BlazorSamples.Web.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
-builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
+builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
 
 var app = builder.Build();
 
