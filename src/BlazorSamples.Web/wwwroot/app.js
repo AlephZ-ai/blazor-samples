@@ -24,6 +24,7 @@ async function requestMicrophonePermission() {
 }
 
 function getSupportedMimeType() {
+    // webm=chrome/edge/firefox, mp4=safari
     const types = ['audio/webm', 'audio/mp4'];
 
     for (const type of types) {
