@@ -2,7 +2,7 @@
   "name": "ts",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "./js/app.js",
   "type": "module",
   "scripts": {
     "debugBuild": "esbuild ./scripts/app.ts --format=esm --bundle --sourcemap --outdir=wwwroot/js",
