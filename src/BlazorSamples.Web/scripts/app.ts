@@ -67,7 +67,7 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
         recorder.ondataavailable = async (e: BlobEvent) => {
             const data: ArrayBuffer = await e.data.arrayBuffer();
             const uint8Array: Uint8Array = new Uint8Array(data);
-            await page.invokeMethodAsync("DataAvailable", uint8Array, "audio/wav", sampleRate, channelCount);
+            await page.invokeMethodAsync("DataAvailable", uint8Array, mimeType, sampleRate, channelCount);
             if (stopped) {
                 await page.invokeMethodAsync("RecordingStopped");
             }

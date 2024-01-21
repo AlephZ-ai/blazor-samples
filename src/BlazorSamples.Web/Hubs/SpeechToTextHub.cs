@@ -9,13 +9,14 @@ namespace BlazorSamples.Web.Hubs
 {
     // TODO: Need to fix singleton and static hacks
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
-    public class SpeechToTextHub(VoskRecognizer recognizer) : Hub<ISpeechToTextClient>
+    public class SpeechToTextHub : Hub<ISpeechToTextClient>
     {
         static FileStream fileStream = default!;
         static int totalAudioLength = 0;
         unsafe AVCodecContext* codecContext = null;
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType, int sampleRate, int channelCount)
         {
+            Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
             totalAudioLength += buffer.Length;
             var localFileName = "Files/temp.wav";
 
@@ -95,16 +96,22 @@ namespace BlazorSamples.Web.Hubs
         private unsafe void InitializeCodec(string mimeType)
         {
             // Find the decoder for the audio stream
-            AVCodec* codec = ffmpeg.avcodec_find_decoder(MimeTypeToCodecId(mimeType));
+            Console.WriteLine($"Initializing codec for MIME type: {mimeType}");
+            AVCodecID codecId = MimeTypeToCodecId(mimeType);
+            Console.WriteLine($"Codec ID: {codecId}");
+            AVCodec* codec = ffmpeg.avcodec_find_decoder(codecId);
+            Console.WriteLine($"Found decoder");
             if (codec == null)
                 throw new ApplicationException("Unsupported codec!");
 
             // Allocate a codec context for the decoder
             codecContext = ffmpeg.avcodec_alloc_context3(codec);
+            Console.WriteLine($"Decoder alloc");
             if (codecContext == null)
                 throw new ApplicationException("Could not allocate audio codec context.");
 
             // Initialize the codec context to use the given codec
+            Console.WriteLine($"Update context");
             if (ffmpeg.avcodec_open2(codecContext, codec, null) < 0)
                 throw new ApplicationException("Could not open codec.");
         }
