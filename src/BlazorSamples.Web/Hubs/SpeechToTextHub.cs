@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Microsoft.AspNetCore.SignalR;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using FFMpegCore.Enums;
 using Vosk;
 
 namespace BlazorSamples.Web.Hubs
@@ -24,14 +25,14 @@ namespace BlazorSamples.Web.Hubs
 
             if (position == BufferPosition.First)
             {
+                if (File.Exists(localFileName))
+                    File.Delete(localFileName);
+
                 if (!Directory.Exists("Files"))
                     Directory.CreateDirectory("Files");
 
-                if (File.Exists(localFileName))
-                    File.Delete(localFileName);
-                
                 InitializePipes();
-                StartFFMpegProcess(localFileName, sampleRate, channelCount);
+                StartFFMpegProcess(localFileName, mimeType, sampleRate, channelCount);
             }
 
             WriteToServerPipe(buffer);
@@ -54,15 +55,18 @@ namespace BlazorSamples.Web.Hubs
             clientPipe.Connect();
         }
 
-        private void StartFFMpegProcess(string outputPath, int sampleRate, int channelCount)
+        private void StartFFMpegProcess(string outputPath, string mimeType, int sampleRate, int channelCount)
         {
             ffmpegTask = FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(clientPipe), options => options
-                    .ForceFormat("webm"))
+                    .ForceFormat(mimeType.Substring(6))
+                    .WithHardwareAcceleration())
                 .OutputToFile(outputPath, false, options => options
+                    .OverwriteExisting()
                     .ForceFormat("wav")
-                    .WithAudioSamplingRate(sampleRate)
-                    .WithCustomArgument($"-ac {channelCount}"))
+                    .WithAudioSamplingRate(16000)
+                    .WithFastStart()
+                    .WithCustomArgument("-ac 1"))
                 .ProcessAsynchronously();
         }
 
