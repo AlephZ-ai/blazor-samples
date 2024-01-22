@@ -6,6 +6,7 @@ using BlazorSamples.Web.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using Vosk;
+using BlazorSamples.Web;
 
 string models = ".models";
 string voskModels = $"{models}/vosk";
@@ -14,7 +15,7 @@ var modelSpk = "vosk-model-spk-0.4";
 await DownloadVoskModelAsync(model);
 await DownloadVoskModelAsync(modelSpk);
 Vosk.Vosk.SetLogLevel(0);
-
+Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
