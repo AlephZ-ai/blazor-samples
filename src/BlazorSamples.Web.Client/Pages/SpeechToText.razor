@@ -99,7 +99,7 @@
         if (await module.InvokeAsync<bool>("requestMicrophonePermission"))
         {
             var devices = await module.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
-            devices = devices.Where(device => device is not null && device.DeviceId is not null).ToList();
+            devices = devices.Where(device => !string.IsNullOrWhiteSpace(device.DeviceId)).ToList();
             AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
             StateHasChanged();
         }
@@ -126,13 +126,13 @@
     }
 
     [JSInvokable]
-    public async Task DataAvailable(byte[] buffer, string mimeType, int sampleRate, int channelCount)
+    public async Task DataAvailable(byte[] buffer, string mimeType)
     {
         bytesRecorded += buffer.Length;
         await CheckConnection();
         if (hub is not null)
         {
-            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, bytesRecorded, mimeType, sampleRate, channelCount);
+            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, bytesRecorded, mimeType);
         }
 
         if (bufferPosition == BufferPosition.First)

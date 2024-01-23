@@ -51,7 +51,7 @@ async function startRecording(page, deviceId) {
     recorder.ondataavailable = async (e) => {
       const data = await e.data.arrayBuffer();
       const uint8Array = new Uint8Array(data);
-      await page.invokeMethodAsync("DataAvailable", uint8Array, mimeType, sampleRate, channelCount);
+      await page.invokeMethodAsync("DataAvailable", uint8Array, mimeType);
       if (stopped) {
         await page.invokeMethodAsync("RecordingStopped");
       }

@@ -19,7 +19,7 @@ namespace BlazorSamples.Web.Hubs
         private static string pipeName = "audioInputPipe";
         private static Task ffmpegTask;
 
-        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType, int sampleRate, int channelCount)
+        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType)
         {
             var localFileName = "Files/temp.wav";
 
@@ -32,7 +32,7 @@ namespace BlazorSamples.Web.Hubs
                     Directory.CreateDirectory("Files");
 
                 await InitializePipes();
-                ffmpegTask = StartFFMpegProcess(localFileName, mimeType, sampleRate, channelCount);
+                ffmpegTask = StartFFMpegProcess(localFileName, mimeType);
             }
 
             await WriteToServerPipe(buffer);
@@ -55,7 +55,7 @@ namespace BlazorSamples.Web.Hubs
             await dotnetWrite;
         }
 
-        private Task StartFFMpegProcess(string outputPath, string mimeType, int sampleRate, int channelCount) =>
+        private Task StartFFMpegProcess(string outputPath, string mimeType) =>
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(ffmpegReadPipe), options => options
                     .ForceFormat(mimeType.Substring(6))
