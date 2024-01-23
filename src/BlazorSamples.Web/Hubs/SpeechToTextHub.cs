@@ -26,18 +26,10 @@ namespace BlazorSamples.Web.Hubs
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
         {
-            var localFileName = "Files/temp.wav";
-
             if (position == BufferPosition.First)
             {
-                if (File.Exists(localFileName))
-                    File.Delete(localFileName);
-
-                if (!Directory.Exists("Files"))
-                    Directory.CreateDirectory("Files");
-
                 await OpenPipes();
-                ffmpegTask = StartFFMpegProcess(localFileName, mimeType);
+                ffmpegTask = StartFFMpegProcess(mimeType);
                 dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe();
             }
 
@@ -62,7 +54,7 @@ namespace BlazorSamples.Web.Hubs
             await Task.WhenAll(dotnetServerWriteOutPipeWaitForConnectionAsync, ffmpegServerWriteOutPipeWaitForConnectionAsync);
         }
 
-        private Task StartFFMpegProcess(string outputPath, string mimeType) =>
+        private Task StartFFMpegProcess(string mimeType) =>
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(ffmpegClientReadInFromDotnetServerWriteOutPipe), options => options
                     .ForceFormat(mimeType.Substring(6))
@@ -96,19 +88,24 @@ namespace BlazorSamples.Web.Hubs
             await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync();
         }
 
-        private async Task<byte[]> DotnetClientReadInFromFfmpegWriteServerOutPipe()
+        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe()
         {
-            using var memoryStream = new MemoryStream();
-            byte[] buffer = new byte[4096]; // Buffer size can be adjusted as needed
             int bytesRead;
+            var buffer = new byte[4096];
+            var localFileName = "Files/temp.wav";
+            if (File.Exists(localFileName))
+                File.Delete(localFileName);
 
+            if (!Directory.Exists("Files"))
+                Directory.CreateDirectory("Files");
+
+            await using var fileStream = File.OpenWrite(localFileName);
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                memoryStream.Write(buffer, 0, bytesRead);
+                fileStream.Write(buffer, 0, bytesRead);
             }
 
-            // Assuming the data is text and you want to return it as a string
-            return memoryStream.ToArray();
+            await fileStream.FlushAsync();
         }
     }
 }
