@@ -59,11 +59,15 @@ namespace BlazorSamples.Web.Hubs
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(ffmpegReadPipe), options => options
                     .ForceFormat(mimeType.Substring(6))
+                    .UsingMultithreading(false)
                     .WithHardwareAcceleration())
-                .OutputToFile(outputPath, false, options => options
+                .OutputToFile(outputPath, true, options => options
                     .OverwriteExisting()
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
+                    .WithAudioBitrate(256)
+                    .UsingMultithreading(false)
+                    .WithSpeedPreset(Speed.UltraFast)
                     .WithFastStart()
                     .WithCustomArgument("-ac 1"))
                 .ProcessAsynchronously();
