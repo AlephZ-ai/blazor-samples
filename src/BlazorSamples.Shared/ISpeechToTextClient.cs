@@ -10,6 +10,6 @@ namespace BlazorSamples.Shared
     {
         Task ReceiveResult(RegularResult result);
         Task ReceivePartialResult(PartialResult message);
-        Task ReceiveFinalResult(string message);
+        Task ReceiveFinalResult(FinalResult message);
     }
 }

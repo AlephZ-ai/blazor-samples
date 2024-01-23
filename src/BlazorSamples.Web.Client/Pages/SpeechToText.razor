@@ -65,7 +65,7 @@
     private HubConnection? hub;
     private List<string> results = new List<string>();
     private string result = string.Empty;
-    private string finalResult;
+    private string? finalResult;
 
     protected override Task OnInitializedAsync()
     {
@@ -138,9 +138,9 @@
         return Task.CompletedTask;
     }
 
-    public Task ReceiveFinalResult(string message)
+    public Task ReceiveFinalResult(FinalResult message)
     {
-        this.finalResult = message;
+        this.finalResult = message.text;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -197,7 +197,7 @@
 
             hub.On<RegularResult>("ReceiveResult", ReceiveResult);
             hub.On<PartialResult>("ReceivePartialResult", ReceivePartialResult);
-            hub.On<string>("ReceiveFinalResult", ReceiveFinalResult);
+            hub.On<FinalResult>("ReceiveFinalResult", ReceiveFinalResult);
         }
 
         if (hub.State != HubConnectionState.Connected)

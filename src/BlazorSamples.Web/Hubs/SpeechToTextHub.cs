@@ -126,7 +126,7 @@ namespace BlazorSamples.Web.Hubs
                 {
                     r = rec.PartialResult();
                     var pResult = JsonSerializer.Deserialize<PartialResult>(r);
-                    if (pResult is not null && !string.IsNullOrWhiteSpace(pResult.partial))
+                    if (pResult is not null)
                         await caller.ReceivePartialResult(pResult);
                 }
             }
@@ -135,7 +135,7 @@ namespace BlazorSamples.Web.Hubs
             await fileStream.FlushAsync();
             var fResult = JsonSerializer.Deserialize<FinalResult>(r);
             if (fResult is not null && !string.IsNullOrWhiteSpace(fResult.text))
-                await caller.ReceiveFinalResult(r);
+                await caller.ReceiveFinalResult(fResult);
         }
     }
 }

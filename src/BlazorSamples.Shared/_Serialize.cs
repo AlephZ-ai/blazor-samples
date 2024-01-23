@@ -18,7 +18,7 @@
 
     public class PartialResult
     {
-        public string partial { get; set; }
+        public string? partial { get; set; }
     }
 
     public class FinalResult
