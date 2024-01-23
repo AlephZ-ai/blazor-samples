@@ -33,6 +33,10 @@
     <ProjectReference Include="..\BlazorSamples.Web.Client\BlazorSamples.Web.Client.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Files\" />
+  </ItemGroup>
+
   <Target Name="NPM Install" AfterTargets="PreBuildEvent">
     <Exec Command="npm install" />
   </Target>

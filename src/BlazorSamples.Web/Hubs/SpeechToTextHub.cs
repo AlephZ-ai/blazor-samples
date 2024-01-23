@@ -14,9 +14,9 @@ namespace BlazorSamples.Web.Hubs
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
     public class SpeechToTextHub : Hub<ISpeechToTextClient>
     {
-        private static NamedPipeServerStream serverPipe;
-        private static NamedPipeClientStream clientPipe;
-        private static string pipeName = "audioPipe";
+        private static NamedPipeServerStream dotnetWritePipe;
+        private static NamedPipeClientStream ffmpegReadPipe;
+        private static string pipeName = "audioInputPipe";
         private static Task ffmpegTask;
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType, int sampleRate, int channelCount)
@@ -31,34 +31,34 @@ namespace BlazorSamples.Web.Hubs
                 if (!Directory.Exists("Files"))
                     Directory.CreateDirectory("Files");
 
-                InitializePipes();
-                StartFFMpegProcess(localFileName, mimeType, sampleRate, channelCount);
+                await InitializePipes();
+                ffmpegTask = StartFFMpegProcess(localFileName, mimeType, sampleRate, channelCount);
             }
 
             WriteToServerPipe(buffer);
 
             if (position == BufferPosition.Last)
             {
-                FinalizePipes();
+                await FinalizePipes();
                 await ffmpegTask;
             }
 
             await Clients.Caller.ReceiveMessage(p.ToString());
         }
 
-        private void InitializePipes()
+        private async Task InitializePipes()
         {
-            serverPipe = new NamedPipeServerStream(pipeName, PipeDirection.Out);
-            clientPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.In);
+            dotnetWritePipe = new NamedPipeServerStream(pipeName, PipeDirection.Out);
+            ffmpegReadPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.In);
 
-            serverPipe.WaitForConnectionAsync();
-            clientPipe.Connect();
+            var dotnetWrite = dotnetWritePipe.WaitForConnectionAsync();
+            await ffmpegReadPipe.ConnectAsync();
+            await dotnetWrite;
         }
 
-        private void StartFFMpegProcess(string outputPath, string mimeType, int sampleRate, int channelCount)
-        {
-            ffmpegTask = FFMpegArguments
-                .FromPipeInput(new StreamPipeSource(clientPipe), options => options
+        private Task StartFFMpegProcess(string outputPath, string mimeType, int sampleRate, int channelCount) =>
+            FFMpegArguments
+                .FromPipeInput(new StreamPipeSource(ffmpegReadPipe), options => options
                     .ForceFormat(mimeType.Substring(6))
                     .WithHardwareAcceleration())
                 .OutputToFile(outputPath, false, options => options
@@ -68,21 +68,20 @@ namespace BlazorSamples.Web.Hubs
                     .WithFastStart()
                     .WithCustomArgument("-ac 1"))
                 .ProcessAsynchronously();
-        }
 
         private void WriteToServerPipe(byte[] buffer)
         {
-            if (serverPipe.IsConnected)
+            if (dotnetWritePipe.IsConnected)
             {
-                serverPipe.Write(buffer, 0, buffer.Length);
+                dotnetWritePipe.Write(buffer, 0, buffer.Length);
             }
         }
 
-        private void FinalizePipes()
+        private async Task FinalizePipes()
         {
-            serverPipe.Disconnect();
-            serverPipe.Close();
-            clientPipe.Close();
+            dotnetWritePipe.Disconnect();
+            await dotnetWritePipe.DisposeAsync();
+            await ffmpegReadPipe.DisposeAsync();
         }
     }
 }
