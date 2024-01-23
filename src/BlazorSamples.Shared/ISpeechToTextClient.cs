@@ -8,6 +8,8 @@ namespace BlazorSamples.Shared
 {
     public interface ISpeechToTextClient
     {
-        Task ReceiveMessage(string message);
+        Task ReceiveResult(RegularResult result);
+        Task ReceivePartialResult(PartialResult message);
+        Task ReceiveFinalResult(string message);
     }
 }
