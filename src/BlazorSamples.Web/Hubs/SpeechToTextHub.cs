@@ -7,6 +7,7 @@ using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using FFMpegCore.Enums;
 using Vosk;
+using System.Text;
 
 namespace BlazorSamples.Web.Hubs
 {
@@ -21,6 +22,7 @@ namespace BlazorSamples.Web.Hubs
         private static NamedPipeServerStream ffmpegServerWriteOutPipe;
         private static NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe;
         private static Task ffmpegTask;
+        private static Task dotnetTask;
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
         {
@@ -36,10 +38,10 @@ namespace BlazorSamples.Web.Hubs
 
                 await OpenPipes();
                 ffmpegTask = StartFFMpegProcess(localFileName, mimeType);
+                dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe();
             }
 
             await WriteToDotnetServerOutPipe(buffer);
-
             if (position == BufferPosition.Last)
             {
                 await ClosePipes();
@@ -66,7 +68,7 @@ namespace BlazorSamples.Web.Hubs
                     .ForceFormat(mimeType.Substring(6))
                     .UsingMultithreading(false)
                     .WithHardwareAcceleration())
-                .OutputToFile(outputPath, true, options => options
+                .OutputToPipe(new StreamPipeSink(ffmpegServerWriteOutPipe), options => options
                     .OverwriteExisting()
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
@@ -85,10 +87,28 @@ namespace BlazorSamples.Web.Hubs
         private async Task ClosePipes()
         {
             dotnetServerWriteOutPipe.Disconnect();
-            ffmpegServerWriteOutPipe.Disconnect();
-            await Task.WhenAll(dotnetServerWriteOutPipe.DisposeAsync().AsTask(), ffmpegServerWriteOutPipe.DisposeAsync().AsTask());
             await ffmpegTask;
-            await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync().AsTask(), dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync().AsTask());
+            await dotnetServerWriteOutPipe.DisposeAsync();
+            await ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync();
+            ffmpegServerWriteOutPipe.Disconnect();
+            await dotnetTask;
+            await ffmpegServerWriteOutPipe.DisposeAsync();
+            await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync();
+        }
+
+        private async Task<byte[]> DotnetClientReadInFromFfmpegWriteServerOutPipe()
+        {
+            using var memoryStream = new MemoryStream();
+            byte[] buffer = new byte[4096]; // Buffer size can be adjusted as needed
+            int bytesRead;
+
+            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                memoryStream.Write(buffer, 0, bytesRead);
+            }
+
+            // Assuming the data is text and you want to return it as a string
+            return memoryStream.ToArray();
         }
     }
 }
