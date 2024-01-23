@@ -35,7 +35,7 @@ namespace BlazorSamples.Web.Hubs
                 ffmpegTask = StartFFMpegProcess(localFileName, mimeType, sampleRate, channelCount);
             }
 
-            WriteToServerPipe(buffer);
+            await WriteToServerPipe(buffer);
 
             if (position == BufferPosition.Last)
             {
@@ -69,11 +69,11 @@ namespace BlazorSamples.Web.Hubs
                     .WithCustomArgument("-ac 1"))
                 .ProcessAsynchronously();
 
-        private void WriteToServerPipe(byte[] buffer)
+        private async Task WriteToServerPipe(byte[] buffer)
         {
             if (dotnetWritePipe.IsConnected)
             {
-                dotnetWritePipe.Write(buffer, 0, buffer.Length);
+                await dotnetWritePipe.WriteAsync(buffer, 0, buffer.Length);
             }
         }
 
