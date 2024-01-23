@@ -64,7 +64,7 @@
     private IJSObjectReference module = default!;
     private HubConnection? hub;
     private List<string> results = new List<string>();
-    private string result = string.Empty;
+    private string? result;
     private string? finalResult;
 
     protected override Task OnInitializedAsync()
