@@ -26,11 +26,12 @@ namespace BlazorSamples.Web.Hubs
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
         {
+            var caller = Clients.Caller;
             if (position == BufferPosition.First)
             {
                 await OpenPipes();
                 ffmpegTask = StartFFMpegProcess(mimeType);
-                dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe();
+                dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe(caller);
             }
 
             await WriteToDotnetServerOutPipe(buffer);
@@ -38,8 +39,6 @@ namespace BlazorSamples.Web.Hubs
             {
                 await ClosePipes();
             }
-
-            await Clients.Caller.ReceiveMessage(Random.Shared.NextInt64().ToString());
         }
 
         private async Task OpenPipes()
@@ -88,7 +87,7 @@ namespace BlazorSamples.Web.Hubs
             await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync();
         }
 
-        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe()
+        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(ISpeechToTextClient caller)
         {
             int bytesRead;
             var buffer = new byte[4096];
@@ -103,9 +102,18 @@ namespace BlazorSamples.Web.Hubs
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
                 fileStream.Write(buffer, 0, bytesRead);
+                if (rec.AcceptWaveform(buffer, bytesRead))
+                {
+                    await caller.ReceiveMessage(rec.Result());
+                }
+                else
+                {
+                    await caller.ReceiveMessage(rec.PartialResult());
+                }
             }
 
             await fileStream.FlushAsync();
+            await caller.ReceiveMessage(rec.FinalResult());
         }
     }
 }
