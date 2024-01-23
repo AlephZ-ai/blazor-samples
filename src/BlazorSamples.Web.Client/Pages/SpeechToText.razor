@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client;
 @using BlazorSamples.Shared;
 @page "/speech-to-text"
-@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @implements ISpeechToTextClient
 @implements IAsyncDisposable
 @inject IJSRuntime JS
