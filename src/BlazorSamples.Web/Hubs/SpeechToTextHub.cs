@@ -19,16 +19,16 @@ namespace BlazorSamples.Web.Hubs
         private static string audioWriteDotnetServerOutToFfmpegClientInPipe =
             "audioWriteDotnetServerOutToFfmpegClientInPipe";
 
-        private static NamedPipeServerStream dotnetServerWriteOutPipe;
-        private static NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe;
+        private static NamedPipeServerStream dotnetServerWriteOutPipe = null!;
+        private static NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe = null!;
 
         private static string audioWriteFfmpegServerOutToDotnetClientInPipe =
             "audioWriteFfmpegServerOutToDotnetClientInPipe";
 
-        private static NamedPipeServerStream ffmpegServerWriteOutPipe;
-        private static NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe;
-        private static Task ffmpegTask;
-        private static Task dotnetTask;
+        private static NamedPipeServerStream ffmpegServerWriteOutPipe = null!;
+        private static NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe = null!;
+        private static Task ffmpegTask = null!;
+        private static Task dotnetTask = null!;
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
         {

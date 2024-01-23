@@ -1,4 +1,5 @@
-﻿namespace BlazorSamples.Shared
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+namespace BlazorSamples.Shared
 {
     public class TimingResult
     {
@@ -26,3 +27,4 @@
         public string text { get; set; }
     }
 }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
