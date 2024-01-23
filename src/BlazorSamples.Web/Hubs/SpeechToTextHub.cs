@@ -14,7 +14,7 @@ namespace BlazorSamples.Web.Hubs
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
     public class SpeechToTextHub(VoskRecognizer rec) : Hub<ISpeechToTextClient>
     {
-        private static string inputPipeName = "audioWriteToFFMPEGInputPipe";
+        private static string inputPipeName = "audioWriteDotnetServerOutToFfmpegClientInPipe";
         private static NamedPipeServerStream dotnetServerWriteOutPipe;
         private static NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe;
         private static Task ffmpegTask;
@@ -31,21 +31,21 @@ namespace BlazorSamples.Web.Hubs
                 if (!Directory.Exists("Files"))
                     Directory.CreateDirectory("Files");
 
-                await InitializePipes();
+                await OpenPipes();
                 ffmpegTask = StartFFMpegProcess(localFileName, mimeType);
             }
 
-            await WriteToServerPipe(buffer);
+            await WriteToDotnetServerOutPipe(buffer);
 
             if (position == BufferPosition.Last)
             {
-                await FinalizePipes();
+                await ClosePipes();
             }
 
             await Clients.Caller.ReceiveMessage(Random.Shared.NextInt64().ToString());
         }
 
-        private async Task InitializePipes()
+        private async Task OpenPipes()
         {
             dotnetServerWriteOutPipe = new NamedPipeServerStream(inputPipeName, PipeDirection.Out);
             ffmpegClientReadInFromDotnetServerWriteOutPipe = new NamedPipeClientStream(".", inputPipeName, PipeDirection.In);
@@ -72,12 +72,12 @@ namespace BlazorSamples.Web.Hubs
                     .WithCustomArgument("-ac 1"))
                 .ProcessAsynchronously();
 
-        private async Task WriteToServerPipe(byte[] buffer)
+        private async Task WriteToDotnetServerOutPipe(byte[] buffer)
         {
             await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length);
         }
 
-        private async Task FinalizePipes()
+        private async Task ClosePipes()
         {
             dotnetServerWriteOutPipe.Disconnect();
             await dotnetServerWriteOutPipe.DisposeAsync();
