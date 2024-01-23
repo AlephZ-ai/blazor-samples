@@ -132,7 +132,7 @@
         await CheckConnection();
         if (hub is not null)
         {
-            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, bytesRecorded, mimeType);
+            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType);
         }
 
         if (bufferPosition == BufferPosition.First)

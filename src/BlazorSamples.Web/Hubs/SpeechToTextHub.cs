@@ -19,7 +19,7 @@ namespace BlazorSamples.Web.Hubs
         private static string pipeName = "audioInputPipe";
         private static Task ffmpegTask;
 
-        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, int p, string mimeType)
+        public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
         {
             var localFileName = "Files/temp.wav";
 
@@ -42,7 +42,7 @@ namespace BlazorSamples.Web.Hubs
                 await FinalizePipes();
             }
 
-            await Clients.Caller.ReceiveMessage(p.ToString());
+            await Clients.Caller.ReceiveMessage(Random.Shared.NextInt64().ToString());
         }
 
         private async Task InitializePipes()
