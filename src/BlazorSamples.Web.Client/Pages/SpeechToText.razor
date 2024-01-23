@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client;
 @using BlazorSamples.Shared;
 @page "/speech-to-text"
-@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @implements ISpeechToTextClient
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -69,12 +69,12 @@
 
     protected override Task OnInitializedAsync()
     {
+        thisJS = DotNetObjectReference.Create(this);
         return Task.CompletedTask;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        thisJS = DotNetObjectReference.Create(this);
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
