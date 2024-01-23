@@ -12,7 +12,7 @@ namespace BlazorSamples.Web.Hubs
 {
     // TODO: Need to fix singleton and static hacks
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
-    public class SpeechToTextHub : Hub<ISpeechToTextClient>
+    public class SpeechToTextHub(VoskRecognizer rec) : Hub<ISpeechToTextClient>
     {
         private static NamedPipeServerStream dotnetWritePipe;
         private static NamedPipeClientStream ffmpegReadPipe;
@@ -40,7 +40,6 @@ namespace BlazorSamples.Web.Hubs
             if (position == BufferPosition.Last)
             {
                 await FinalizePipes();
-                await ffmpegTask;
             }
 
             await Clients.Caller.ReceiveMessage(p.ToString());
@@ -81,6 +80,7 @@ namespace BlazorSamples.Web.Hubs
         {
             dotnetWritePipe.Disconnect();
             await dotnetWritePipe.DisposeAsync();
+            await ffmpegTask;
             await ffmpegReadPipe.DisposeAsync();
         }
     }

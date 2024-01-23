@@ -10,7 +10,8 @@ using BlazorSamples.Web;
 
 string models = ".models";
 string voskModels = $"{models}/vosk";
-var model = "vosk-model-en-us-0.22";
+//var model = "vosk-model-en-us-0.22";
+var model = "vosk-model-small-en-us-0.15";
 var modelSpk = "vosk-model-spk-0.4";
 await DownloadVoskModelAsync(model);
 await DownloadVoskModelAsync(modelSpk);
@@ -36,17 +37,19 @@ builder.Services.AddSingleton(sp => new SpkModel($"{voskModels}/{modelSpk}"));
 builder.Services.AddSingleton(sp =>
 {
     var model = sp.GetRequiredService<Model>();
-    var spkModel = sp.GetRequiredService<SpkModel>();
     var rec = new VoskRecognizer(model, 16000.0f);
-    rec.SetSpkModel(new SpkModel($"{voskModels}/{modelSpk}"));
-    rec.SetMaxAlternatives(0);
-    rec.SetWords(true);
     return rec;
 });
 
 var app = builder.Build();
+var rec = app.Services.GetRequiredService<VoskRecognizer>();
+var spkModel = app.Services.GetRequiredService<SpkModel>();
+rec.SetSpkModel(spkModel);
+rec.SetMaxAlternatives(0);
+rec.SetWords(true);
 
-app.UseResponseCompression();
+
+//app.UseResponseCompression();
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
