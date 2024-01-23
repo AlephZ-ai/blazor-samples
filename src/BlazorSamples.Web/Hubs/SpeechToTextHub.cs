@@ -14,9 +14,9 @@ namespace BlazorSamples.Web.Hubs
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
     public class SpeechToTextHub(VoskRecognizer rec) : Hub<ISpeechToTextClient>
     {
-        private static NamedPipeServerStream dotnetWritePipe;
-        private static NamedPipeClientStream ffmpegReadPipe;
-        private static string pipeName = "audioInputPipe";
+        private static string inputPipeName = "audioWriteToFFMPEGInputPipe";
+        private static NamedPipeServerStream dotnetServerWriteOutPipe;
+        private static NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe;
         private static Task ffmpegTask;
 
         public async Task ProcessAudioBuffer(byte[] buffer, BufferPosition position, string mimeType)
@@ -47,17 +47,17 @@ namespace BlazorSamples.Web.Hubs
 
         private async Task InitializePipes()
         {
-            dotnetWritePipe = new NamedPipeServerStream(pipeName, PipeDirection.Out);
-            ffmpegReadPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.In);
+            dotnetServerWriteOutPipe = new NamedPipeServerStream(inputPipeName, PipeDirection.Out);
+            ffmpegClientReadInFromDotnetServerWriteOutPipe = new NamedPipeClientStream(".", inputPipeName, PipeDirection.In);
 
-            var dotnetWrite = dotnetWritePipe.WaitForConnectionAsync();
-            await ffmpegReadPipe.ConnectAsync();
-            await dotnetWrite;
+            var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync();
+            await ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync();
+            await dotnetServerWriteOutPipeWaitForConnectionAsync;
         }
 
         private Task StartFFMpegProcess(string outputPath, string mimeType) =>
             FFMpegArguments
-                .FromPipeInput(new StreamPipeSource(ffmpegReadPipe), options => options
+                .FromPipeInput(new StreamPipeSource(ffmpegClientReadInFromDotnetServerWriteOutPipe), options => options
                     .ForceFormat(mimeType.Substring(6))
                     .UsingMultithreading(false)
                     .WithHardwareAcceleration())
@@ -74,18 +74,15 @@ namespace BlazorSamples.Web.Hubs
 
         private async Task WriteToServerPipe(byte[] buffer)
         {
-            if (dotnetWritePipe.IsConnected)
-            {
-                await dotnetWritePipe.WriteAsync(buffer, 0, buffer.Length);
-            }
+            await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length);
         }
 
         private async Task FinalizePipes()
         {
-            dotnetWritePipe.Disconnect();
-            await dotnetWritePipe.DisposeAsync();
+            dotnetServerWriteOutPipe.Disconnect();
+            await dotnetServerWriteOutPipe.DisposeAsync();
             await ffmpegTask;
-            await ffmpegReadPipe.DisposeAsync();
+            await ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync();
         }
     }
 }
