@@ -1,37 +1,21 @@
 // scripts/app.ts
 var recorder;
-var mediaSource;
-var sourceBuffer;
-var audioElement;
-var audioChunks = [];
-function startMediaSource() {
-  if (!mediaSource) {
-    audioElement = document.getElementById("audioElement");
-    mediaSource = new MediaSource();
-    audioElement.src = URL.createObjectURL(mediaSource);
-    mediaSource.addEventListener("sourceopen", () => {
-      sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
-      readBufferChunks();
-    }, { once: true });
-  }
+function startMediaSource(page) {
+  var audioElement = document.getElementById("audioElement");
+  var mediaSource = new MediaSource();
+  mediaSource.addEventListener("sourceopen", () => {
+    var sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+    readBufferChunks(page, sourceBuffer);
+    audioElement.play();
+  }, { once: true });
+  audioElement.src = URL.createObjectURL(mediaSource);
 }
-function readBufferChunks() {
-  let chunk = audioChunks.pop();
-  if (chunk) {
-    sourceBuffer?.appendBuffer(chunk);
-  }
-  sourceBuffer?.addEventListener("updateend", () => readBufferChunks(), { once: true });
-}
-function appendMediaSourceBuffer(chunk) {
-  audioChunks.unshift(chunk);
-}
-function stopMediaSource() {
-  if (mediaSource) {
-    audioElement?.pause();
-    mediaSource.endOfStream();
-    audioElement = null;
-    mediaSource = null;
-  }
+async function readBufferChunks(page, sourceBuffer) {
+  var chunk = await page.invokeMethodAsync("Pop");
+  if (!chunk)
+    return;
+  sourceBuffer.appendBuffer(chunk);
+  sourceBuffer.addEventListener("updateend", () => readBufferChunks(page, sourceBuffer), { once: true });
 }
 async function getAudioInputDevices() {
   try {
@@ -106,13 +90,11 @@ function stopRecording() {
   }
 }
 export {
-  appendMediaSourceBuffer,
   getAudioInputDevices,
   getSupportedMimeType,
   requestMicrophonePermission,
   startMediaSource,
   startRecording,
-  stopMediaSource,
   stopRecording
 };
 //# sourceMappingURL=app.js.map

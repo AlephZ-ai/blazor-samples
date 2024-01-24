@@ -2,10 +2,6 @@
 //import { connect } from 'extendable-media-recorder-wav-encoder';
 //await register(await connect());
 let recorder: MediaRecorder | null;
-let mediaSource: MediaSource | null;
-let sourceBuffer: SourceBuffer | null;
-let audioElement: HTMLAudioElement | null;
-let audioChunks: Uint8Array[] = [];
 export interface BrowserMediaDevice {
     DeviceId: string;
     Label: string;
@@ -13,38 +9,23 @@ export interface BrowserMediaDevice {
     GroupId: string;
 }
 
-export function startMediaSource() {
-    if (!mediaSource) {
-        audioElement = document.getElementById('audioElement') as HTMLAudioElement;
-        mediaSource = new MediaSource();
-        audioElement.src = URL.createObjectURL(mediaSource);
-        mediaSource.addEventListener('sourceopen', () => {
-            sourceBuffer = mediaSource!.addSourceBuffer('audio/mpeg');
-            readBufferChunks();
-        }, { once: true });
-    }
+export function startMediaSource(page: DotNet.DotNetObject) {
+    var audioElement = document.getElementById('audioElement') as HTMLAudioElement;
+    var mediaSource = new MediaSource();
+    mediaSource.addEventListener('sourceopen', () => {
+        var sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+        readBufferChunks(page, sourceBuffer);
+        audioElement.play();
+    }, { once: true });
+
+    audioElement.src = URL.createObjectURL(mediaSource);
 }
 
-function readBufferChunks() {
-    let chunk = audioChunks.pop();
-    if (chunk) {
-        sourceBuffer?.appendBuffer(chunk);
-    }
-
-    sourceBuffer?.addEventListener('updateend', () => readBufferChunks(), { once: true });
-}
-
-export function appendMediaSourceBuffer(chunk: Uint8Array) {
-    audioChunks.unshift(chunk);
-}
-
-export function stopMediaSource() {
-    if (mediaSource) {
-        audioElement?.pause();
-        mediaSource.endOfStream();
-        audioElement = null;
-        mediaSource = null;
-    }
+async function readBufferChunks(page: DotNet.DotNetObject, sourceBuffer: SourceBuffer) {
+    var chunk: Uint8Array | null = await page.invokeMethodAsync("Pop");
+    if (!chunk) return;
+    sourceBuffer.appendBuffer(chunk);
+    sourceBuffer.addEventListener('updateend', () => readBufferChunks(page, sourceBuffer), { once: true });
 }
 
 export async function getAudioInputDevices(): Promise<BrowserMediaDevice[]> {
