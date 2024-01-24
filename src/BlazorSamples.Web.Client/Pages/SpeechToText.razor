@@ -33,8 +33,8 @@
 @if (results.Count > 0)
 {
     <div>
-        <h5>Regular Results</h5>
-        @foreach (var item in results)
+    <h5>Regular Results</h5>
+    @foreach (var item in results)
         {
             <p>@item</p>
         }
@@ -67,14 +67,16 @@
     private string? result;
     private string? finalResult;
 
-    protected override Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         thisJS = DotNetObjectReference.Create(this);
-        return Task.CompletedTask;
+        Console.WriteLine("OnInitialized");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        Console.WriteLine("OnAfterRenderAsync");
+
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
@@ -85,6 +87,7 @@
 
     async Task StartRecording()
     {
+        Console.WriteLine("OnAfterRenderAsync");
         if (!isRecording)
         {
             bytesRecorded = 0;

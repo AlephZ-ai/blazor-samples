@@ -116,7 +116,7 @@
     }
 
     [JSInvokable]
-    public async Task DataAvailable(byte[] buffer, string mimeType, int sampleRate, int channelCount)
+    public async Task DataAvailable(byte[] buffer, string mimeType)
     {
         if (fileStream is not null)
         {

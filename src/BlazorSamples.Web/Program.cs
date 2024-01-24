@@ -87,7 +87,9 @@ async Task DownloadVoskModelAsync(string model)
         if (!Directory.Exists(models)) Directory.CreateDirectory(models);
         if (!Directory.Exists(voskModels)) Directory.CreateDirectory(voskModels);
         Directory.CreateDirectory(modelPath);
-        using var client = new HttpClient();
+        var handler = new HttpClientHandler();
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        using var client = new HttpClient(handler);
         using var response = await client.GetAsync(url);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsByteArrayAsync();
