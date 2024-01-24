@@ -8,7 +8,7 @@ using Whisper.net;
 
 namespace BlazorSamples.ScratchConsole
 {
-    public static class WhisperProgram
+    public class WhisperProgram
     {
         static string models = ".models";
         static string whisperModels = $"{models}/whisper";

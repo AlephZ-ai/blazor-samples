@@ -5,7 +5,7 @@ using Vosk;
 
 namespace BlazorSamples.ScratchConsole
 {
-    public static class VoskProgram
+    public class VoskProgram
     {
         static string models = ".models";
         static string voskModels = $"{models}/vosk";
@@ -14,7 +14,7 @@ namespace BlazorSamples.ScratchConsole
             MainAsync().Wait();
         }
 
-        public async static Task MainAsync()
+        public static async Task MainAsync()
         {
             var model = "vosk-model-en-us-0.22";
             var modelSpk = "vosk-model-spk-0.4";
