@@ -1,5 +1,30 @@
 // scripts/app.ts
 var recorder;
+var mediaSource;
+var sourceBuffer;
+var audioElement;
+function startMediaSource() {
+  if (!mediaSource) {
+    audioElement = document.getElementById("audioElement");
+    mediaSource = new MediaSource();
+    audioElement.src = URL.createObjectURL(mediaSource);
+    mediaSource.addEventListener("sourceopen", () => {
+      sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+      audioElement?.play();
+    }, { once: true });
+  }
+}
+function appendMediaSourceBuffer(buffer) {
+  sourceBuffer?.appendBuffer(buffer);
+}
+function stopMediaSource() {
+  if (mediaSource) {
+    audioElement?.pause();
+    mediaSource.endOfStream();
+    audioElement = null;
+    mediaSource = null;
+  }
+}
 async function getAudioInputDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -73,10 +98,13 @@ function stopRecording() {
   }
 }
 export {
+  appendMediaSourceBuffer,
   getAudioInputDevices,
   getSupportedMimeType,
   requestMicrophonePermission,
+  startMediaSource,
   startRecording,
+  stopMediaSource,
   stopRecording
 };
 //# sourceMappingURL=app.js.map

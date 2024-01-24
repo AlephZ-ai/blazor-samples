@@ -65,7 +65,7 @@ namespace BlazorSamples.Rpc.Services
             var leaseByteString = ByteString.CopyFrom(lease);
             // Can't use DI Tts.TtsClient because it needs dynamic address but channels are thread safe
             var channel = GrpcChannel.ForAddress($"https://{inferenceAddress}");
-            var client = new Tts.TtsClient(_channel);
+            var client = new Tts.TtsClient(channel);
             return (client, channel, leaseByteString);
         }
     }

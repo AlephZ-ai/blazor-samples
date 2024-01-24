@@ -2,11 +2,39 @@
 //import { connect } from 'extendable-media-recorder-wav-encoder';
 //await register(await connect());
 let recorder: MediaRecorder | null;
+let mediaSource: MediaSource | null;
+let sourceBuffer: SourceBuffer | null;
+let audioElement: HTMLAudioElement | null;
 export interface BrowserMediaDevice {
     DeviceId: string;
     Label: string;
     Kind: string;
     GroupId: string;
+}
+
+export function startMediaSource() {
+    if (!mediaSource) {
+        audioElement = document.getElementById('audioElement') as HTMLAudioElement;
+        mediaSource = new MediaSource();
+        audioElement.src = URL.createObjectURL(mediaSource);
+        mediaSource.addEventListener('sourceopen', () => {
+            sourceBuffer = mediaSource!.addSourceBuffer('audio/mpeg');
+            audioElement?.play();
+        }, { once: true });
+    }
+}
+
+export function appendMediaSourceBuffer(buffer: Uint8Array) {
+    sourceBuffer?.appendBuffer(buffer);
+}
+
+export function stopMediaSource() {
+    if (mediaSource) {
+        audioElement?.pause();
+        mediaSource.endOfStream();
+        audioElement = null;
+        mediaSource = null;
+    }
 }
 
 export async function getAudioInputDevices(): Promise<BrowserMediaDevice[]> {

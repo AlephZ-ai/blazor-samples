@@ -7,6 +7,10 @@ using BlazorFileSaver;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using BlazorSamples.PlayHT.Protos.V1;
+using Grpc.Net.Client.Web;
+using Grpc.Net.Client;
+using System.Net.Http;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();
@@ -19,9 +23,21 @@ builder.Services.ConfigureHttpClientDefaults(http =>
     http.UseServiceDiscovery();
 });
 
-builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
-builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
-builder.Services.AddGrpcClient<Tts.TtsClient>(options => options.Address = new Uri("https://rpc"));
+builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("https://api"));
+builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("https://legacy"));
+// TODO: Why does discovery not work?
+builder.Services.AddTransient(sp =>
+{
+    // TODO: Fix this hack
+    var c = sp.GetRequiredService<IConfiguration>();
+    var channel = GrpcChannel.ForAddress($"https://{c.GetValue<string>("Services:rpc")}", new GrpcChannelOptions
+    {
+        HttpClient = new HttpClient(new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+    });
+
+    return new Tts.TtsClient(channel);
+});
+
 builder.Services.AddBlazorFileSaver();
 
 var app = builder.Build();

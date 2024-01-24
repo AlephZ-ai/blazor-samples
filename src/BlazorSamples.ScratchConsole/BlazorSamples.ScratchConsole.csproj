@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <StartupObject>BlazorSamples.ScratchConsole.PlayHTProgram</StartupObject>
-    <Platforms>AnyCPU</Platforms>
     <UserSecretsId>d1479501-3523-405a-b5d1-8914ffc5e4d3</UserSecretsId>
   </PropertyGroup>
 

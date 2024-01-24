@@ -77,13 +77,21 @@ namespace BlazorSamples.ScratchConsole
             using var channel = GrpcChannel.ForAddress($"https://{inferenceAddress}");
             await using var stream = File.OpenWrite(mp3Path);
             var client = new Tts.TtsClient(channel);
-            var response = client.Tts(request, headers);
-            await foreach (var item in response.ResponseStream.ReadAllAsync())
+            try
             {
-                await stream.WriteAsync(item.Data.Memory);
-            }
+                var response = client.Tts(request, headers);
+                await foreach (var item in response.ResponseStream.ReadAllAsync())
+                {
+                    await stream.WriteAsync(item.Data.Memory);
+                }
 
-            await stream.FlushAsync();
+                await stream.FlushAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }

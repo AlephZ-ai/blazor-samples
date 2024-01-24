@@ -3,35 +3,63 @@
 @using BlazorSamples.PlayHT.Protos.V1
 @using Grpc.Core
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 @inject Tts.TtsClient client
 
 <PageTitle>Text to Speech</PageTitle>
 
 <h1>Text to Speech</h1>
 
-
+<audio id="audioElement" controls></audio>
 <EditForm Enhance Model="request" OnSubmit="SubmitAsync">
     <div class="form-group">
         <label for="Message">Question</label>
         <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
     </div>
 
-    <button type="submit" class="btn btn-primary">Send</button>
+    <button disabled="@(isPlaying)" type="submit" class="btn btn-primary">Say</button>
 </EditForm>
 
+<button disabled="@(!isPlaying)" type="submit" class="btn btn-primary" @onclick="Stop">Stop</button>
 @code {
     private ChatRequest request = new() { Message = "This is a test of the automatic broadcast system.  This is only a test." };
+    private DotNetObjectReference<TextToSpeech> thisJS = default!;
+    private IJSObjectReference module = default!;
+    private bool isPlaying;
+    protected override void OnInitialized()
+    {
+        thisJS = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
+            StateHasChanged();
+        }
+    }
+
+    private async Task Stop()
+    {
+        await module.InvokeVoidAsync("stopMediaSource");
+        isPlaying = false;
+    }
+
     private async Task SubmitAsync()
     {
+        isPlaying = true;
+        StateHasChanged();
         var request = new TtsRequest
         {
             Params = new()
             {
-                Text   = { "This is a test of the automatic broadcast system.  This is only a test." },
+                Text   = { this.request.Message },
                 Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
                 Format = Format.Mp3,
                 Temperature = 1.5f,
-                Quality = Quality.Premium,
+                Quality = Quality.Draft, // For the fastest
                 Speed = 0.8f,
                 SpeechAttributes = 9,
                 StyleGuidance = 16,
@@ -39,8 +67,20 @@
         };
 
         var response = client.Tts(request);
+        await module.InvokeVoidAsync("startMediaSource");
         await foreach (var item in response.ResponseStream.ReadAllAsync())
         {
+            await module.InvokeVoidAsync("appendMediaSourceBuffer", item.Data.ToByteArray());
         }
+
+        await module.InvokeVoidAsync("stopMediaSource");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await module.InvokeVoidAsync("stopMediaSource");
+        isPlaying = false;
+        thisJS.Dispose();
+        await module.DisposeAsync();
     }
 }
