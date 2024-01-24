@@ -70,13 +70,10 @@
     protected override void OnInitialized()
     {
         thisJS = DotNetObjectReference.Create(this);
-        Console.WriteLine("OnInitialized");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Console.WriteLine("OnAfterRenderAsync");
-
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
@@ -87,7 +84,6 @@
 
     async Task StartRecording()
     {
-        Console.WriteLine("OnAfterRenderAsync");
         if (!isRecording)
         {
             bytesRecorded = 0;

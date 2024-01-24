@@ -17,13 +17,13 @@ namespace BlazorSamples.Web.Hubs
     public class SpeechToTextHub(VoskRecognizer rec) : Hub<ISpeechToTextClient>
     {
         private static string audioWriteDotnetServerOutToFfmpegClientInPipe =
-            "audioWriteDotnetServerOutToFfmpegClientInPipe";
+            Guid.NewGuid().ToString();
 
         private static NamedPipeServerStream dotnetServerWriteOutPipe = null!;
         private static NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe = null!;
 
         private static string audioWriteFfmpegServerOutToDotnetClientInPipe =
-            "audioWriteFfmpegServerOutToDotnetClientInPipe";
+            Guid.NewGuid().ToString();
 
         private static NamedPipeServerStream ffmpegServerWriteOutPipe = null!;
         private static NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe = null!;
