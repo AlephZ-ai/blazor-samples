@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using BlazorSamples.Shared.PlayHT;
 using BlazorSamples.Shared.PlayHT.Protos.V1;
@@ -43,6 +45,13 @@ namespace BlazorSamples.ScratchConsole
             var authResponse = await authClient.SendAsync(authRequest, HttpCompletionOption.ResponseHeadersRead);
             authResponse.EnsureSuccessStatusCode();
             var lease = await authResponse.Content.ReadAsByteArrayAsync();
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(1519257480).ToLocalTime();
+            var created = epoch.AddSeconds(BinaryPrimitives.ReadUInt32BigEndian(lease.AsSpan(64, 4)));
+            var duration = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lease.AsSpan(68, 4)));
+            var expires = created.Add(duration);
+            using var ms = new MemoryStream(lease[72..]);
+            var metadata = (await JsonSerializer.DeserializeAsync<IDictionary<string, JsonElement>>(ms))!;
+            var inferenceAddress = metadata["inference_address"].ToString();
             var headers = new Metadata
             {
                 { "Content-Type", "audio/mpeg" },
@@ -65,7 +74,7 @@ namespace BlazorSamples.ScratchConsole
             };
 
 
-            using var channel = GrpcChannel.ForAddress("https://prod.turbo.play.ht");
+            using var channel = GrpcChannel.ForAddress($"https://{inferenceAddress}");
             await using var stream = File.OpenWrite(mp3Path);
             var client = new Tts.TtsClient(channel);
             var response = client.Tts(request, headers);

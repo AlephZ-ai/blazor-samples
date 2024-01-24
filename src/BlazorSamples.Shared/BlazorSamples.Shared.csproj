@@ -21,7 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="PlayHT\Protos\api.proto" GrpcServices="Client" />
+		<Protobuf Include="PlayHT\Protos\playHT.proto" GrpcServices="Client" />
 	</ItemGroup>
 
 </Project>
