@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package playht.v1;
-option csharp_namespace = "BlazorSamples.Rpc.PlayHT.Protos.V1";
+option csharp_namespace = "BlazorSamples.PlayHT.Protos.V1";
 
 // Status codes.
 enum Code {

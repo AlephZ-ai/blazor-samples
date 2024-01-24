@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Grpc.Core;
-using BlazorSamples.Rpc.PlayHT.Protos.V1;
+using BlazorSamples.PlayHT.Protos.V1;
 using Google.Protobuf;
 using Grpc.Net.Client;
 

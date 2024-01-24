@@ -45,10 +45,9 @@
     private DotNetObjectReference<AudioRecorder> thisJS = default!;
     private IJSObjectReference module = default!;
 
-    protected override Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         thisJS = DotNetObjectReference.Create(this);
-        return Task.CompletedTask;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

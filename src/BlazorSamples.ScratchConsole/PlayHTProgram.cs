@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using BlazorSamples.Shared.PlayHT;
-using BlazorSamples.Shared.PlayHT.Protos.V1;
+using BlazorSamples.PlayHT.Protos.V1;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;

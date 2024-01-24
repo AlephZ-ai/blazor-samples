@@ -22,8 +22,4 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.7.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
-  </ItemGroup>
-
 </Project>

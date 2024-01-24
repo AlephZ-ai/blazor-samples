@@ -6,7 +6,7 @@ using KristofferStrube.Blazor.WebIDL;
 using BlazorFileSaver;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
-using BlazorSamples.Shared.PlayHT.Protos.V1;
+using BlazorSamples.PlayHT.Protos.V1;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();
