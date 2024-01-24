@@ -1,8 +1,6 @@
 using BlazorSamples.PlayHT.Protos.V1;
 using BlazorSamples.Rpc.Services;
 
-const string corsName = "AllowAll";
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
