@@ -3,6 +3,7 @@ var recorder;
 var mediaSource;
 var sourceBuffer;
 var audioElement;
+var audioChunks = [];
 function startMediaSource() {
   if (!mediaSource) {
     audioElement = document.getElementById("audioElement");
@@ -10,12 +11,19 @@ function startMediaSource() {
     audioElement.src = URL.createObjectURL(mediaSource);
     mediaSource.addEventListener("sourceopen", () => {
       sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
-      audioElement?.play();
+      readBufferChunks();
     }, { once: true });
   }
 }
-function appendMediaSourceBuffer(buffer) {
-  sourceBuffer?.appendBuffer(buffer);
+function readBufferChunks() {
+  let chunk = audioChunks.pop();
+  if (chunk) {
+    sourceBuffer?.appendBuffer(chunk);
+  }
+  sourceBuffer?.addEventListener("updateend", () => readBufferChunks(), { once: true });
+}
+function appendMediaSourceBuffer(chunk) {
+  audioChunks.unshift(chunk);
 }
 function stopMediaSource() {
   if (mediaSource) {

@@ -5,6 +5,7 @@ let recorder: MediaRecorder | null;
 let mediaSource: MediaSource | null;
 let sourceBuffer: SourceBuffer | null;
 let audioElement: HTMLAudioElement | null;
+let audioChunks: Uint8Array[] = [];
 export interface BrowserMediaDevice {
     DeviceId: string;
     Label: string;
@@ -19,13 +20,22 @@ export function startMediaSource() {
         audioElement.src = URL.createObjectURL(mediaSource);
         mediaSource.addEventListener('sourceopen', () => {
             sourceBuffer = mediaSource!.addSourceBuffer('audio/mpeg');
-            audioElement?.play();
+            readBufferChunks();
         }, { once: true });
     }
 }
 
-export function appendMediaSourceBuffer(buffer: Uint8Array) {
-    sourceBuffer?.appendBuffer(buffer);
+function readBufferChunks() {
+    let chunk = audioChunks.pop();
+    if (chunk) {
+        sourceBuffer?.appendBuffer(chunk);
+    }
+
+    sourceBuffer?.addEventListener('updateend', () => readBufferChunks(), { once: true });
+}
+
+export function appendMediaSourceBuffer(chunk: Uint8Array) {
+    audioChunks.unshift(chunk);
 }
 
 export function stopMediaSource() {

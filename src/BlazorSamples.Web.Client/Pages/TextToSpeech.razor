@@ -72,8 +72,6 @@
         {
             await module.InvokeVoidAsync("appendMediaSourceBuffer", item.Data.ToByteArray());
         }
-
-        await module.InvokeVoidAsync("stopMediaSource");
     }
 
     public async ValueTask DisposeAsync()
