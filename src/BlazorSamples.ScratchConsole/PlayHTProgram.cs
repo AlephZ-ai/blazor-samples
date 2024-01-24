@@ -62,7 +62,7 @@ namespace BlazorSamples.ScratchConsole
                 Lease = ByteString.CopyFrom(lease),
                 Params = new()
                 {
-                    Text   = { "Hello this is a test of the automatic broadcast system.  This is only a test." },
+                    Text   = { "This is a test of the automatic broadcast system.  This is only a test." },
                     Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
                     Format = Format.Mp3,
                     Temperature = 1.5f,

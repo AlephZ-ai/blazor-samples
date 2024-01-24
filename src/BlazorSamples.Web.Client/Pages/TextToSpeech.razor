@@ -1,9 +1,26 @@
 ﻿@page "/text-to-speech"
+@using BlazorSamples.Shared
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <PageTitle>Text to Speech</PageTitle>
 
 <h1>Text to Speech</h1>
 
+
+<EditForm Enhance Model="request" OnSubmit="SubmitAsync">
+    <div class="form-group">
+        <label for="Message">Question</label>
+        <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Send</button>
+</EditForm>
+
 @code {
+    private ChatRequest request = new() { Message = "This is a test of the automatic broadcast system.  This is only a test." };
+
+    private async Task SubmitAsync()
+    {
+
+    }
 }

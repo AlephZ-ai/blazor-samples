@@ -6,6 +6,7 @@ using KristofferStrube.Blazor.WebIDL;
 using BlazorFileSaver;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
+using BlazorSamples.Shared.PlayHT.Protos.V1;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();
@@ -20,6 +21,7 @@ builder.Services.ConfigureHttpClientDefaults(http =>
 
 builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
 builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
+builder.Services.AddGrpcClient<Tts.TtsClient>(options => options.Address = new Uri("https://rpc"));
 builder.Services.AddBlazorFileSaver();
 
 var app = builder.Build();

@@ -1,7 +1,6 @@
 ﻿//import { MediaRecorder, register } from 'extendable-media-recorder';
 //import { connect } from 'extendable-media-recorder-wav-encoder';
 //await register(await connect());
-import audioBufferToWav from 'audiobuffer-to-wav';
 let recorder: MediaRecorder | null;
 export interface BrowserMediaDevice {
     DeviceId: string;

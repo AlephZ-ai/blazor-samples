@@ -8,11 +8,6 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddHttpClient();
-builder.Services.AddGrpcClient<Tts.TtsClient>(options =>
-{
-    options.Address = new Uri("https://prod.turbo.play.ht");
-});
-
 var app = builder.Build();
 app.Lifetime.ApplicationStopping.Register(OnShutdown);
 
