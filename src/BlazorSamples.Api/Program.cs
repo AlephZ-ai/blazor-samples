@@ -431,16 +431,10 @@ app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration
 
     var get = await playHT.SendAsync(request);
     get.EnsureSuccessStatusCode();
-    List<VoiceReturn> x = null!;
-    try
-    {
-        x = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
-        x = x.Where(v => v.id.StartsWith("s3:")).ToList();
-    } catch (Exception ex)
-    {
-            Console.WriteLine(ex);
-        }
-    return x;
+    List<VoiceReturn> sampleList = null!;
+        sampleList = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
+        sampleList = sampleList.Where(v => v.id.StartsWith("s3:")).ToList();
+    return sampleList;
 })
 .WithName("GetVoices")
 .WithOpenApi();
