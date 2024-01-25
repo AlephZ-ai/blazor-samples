@@ -14,7 +14,7 @@ namespace BlazorSamples.Web.Hubs
 {
     // TODO: Need to fix singleton and static hacks
     // TODO: Reorder out of order buffers or don't use signalr (websockets directly? seems easier)
-    public class SpeechToTextHub(VoskRecognizer rec) : Hub<ISpeechToTextClient>
+    public class SpeechToTextHub(ISpeechToTextProvider provider) : Hub<ISpeechToTextClient>
     {
         private static string audioWriteDotnetServerOutToFfmpegClientInPipe =
             Guid.NewGuid().ToString();
@@ -101,7 +101,6 @@ namespace BlazorSamples.Web.Hubs
         private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(ISpeechToTextClient caller)
         {
             int bytesRead;
-            string? r;
             var buffer = new byte[4096];
             var localFileName = "Files/temp.wav";
             if (File.Exists(localFileName))
@@ -111,31 +110,25 @@ namespace BlazorSamples.Web.Hubs
                 Directory.CreateDirectory("Files");
 
             await using var fileStream = File.OpenWrite(localFileName);
-            while ((bytesRead =
-                       await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                fileStream.Write(buffer, 0, bytesRead);
-                if (rec.AcceptWaveform(buffer, bytesRead))
+                await fileStream.WriteAsync(buffer, 0, bytesRead);
+                var result = await provider.AppendWavChunk(buffer, bytesRead);
+                if (!string.IsNullOrWhiteSpace(result.CompleteSentence))
                 {
-                    r = rec.Result();
-                    var result = JsonSerializer.Deserialize<RegularResult>(r);
-                    if (result is not null && !string.IsNullOrWhiteSpace(result.text))
-                        await caller.ReceiveResult(result);
+                    await caller.ReceiveResult(new RegularResult { text = result.CompleteSentence });
                 }
-                else
+                else if (!string.IsNullOrWhiteSpace(result.SentenceFragment))
                 {
-                    r = rec.PartialResult();
-                    var pResult = JsonSerializer.Deserialize<PartialResult>(r);
-                    if (pResult is not null)
-                        await caller.ReceivePartialResult(pResult);
+                    await caller.ReceivePartialResult(new PartialResult { partial = result.SentenceFragment });
                 }
             }
 
-            r = rec.FinalResult();
+            var finalResult = provider.FinalResult();
             await fileStream.FlushAsync();
-            var fResult = JsonSerializer.Deserialize<FinalResult>(r);
-            if (fResult is not null && !string.IsNullOrWhiteSpace(fResult.text))
-                await caller.ReceiveFinalResult(fResult);
+            if (!string.IsNullOrWhiteSpace(finalResult)) {
+                await caller.ReceiveFinalResult(new FinalResult { text = finalResult });
+            }
         }
     }
 }
