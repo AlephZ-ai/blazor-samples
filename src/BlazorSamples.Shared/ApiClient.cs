@@ -95,5 +95,11 @@ namespace BlazorSamples.Shared
                 yield return chatResponse;
             }
         }
+        public async Task<List<VoiceReturn>> GetVoicesAsync()
+        {
+            var response = await httpClient.GetAsync("/get-voices").ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return (await response.Content.ReadFromJsonAsync<List<VoiceReturn>>().ConfigureAwait(false))!;
+        }
     }
 }

@@ -7,6 +7,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject Tts.TtsClient client
+@inject ApiClient voicesClient
 
 <PageTitle>Text to Speech</PageTitle>
 
@@ -18,10 +19,17 @@
         <label for="Message">Question</label>
         <InputTextArea id="Message" class="form-control" rows="3" @bind-Value="request.Message" />
     </div>
-
+    <InputSelect @bind-Value="voice">
+        @foreach (var voice in voices)
+        {
+            <option value="@voice.id">@voice.name</option>
+        }
+    </InputSelect>
     <button type="submit" class="btn btn-primary">Say</button>
 </EditForm>
 @code {
+    private string voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json";
+    private List<VoiceReturn> voices = new();
     private ChatRequest request = new()
         {
             Message = "This is a test of the automatic broadcast system. This is only a test."
@@ -39,6 +47,7 @@
         if (firstRender)
         {
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
+            voices = await GetVoices();
             StateHasChanged();
         }
     }
@@ -57,11 +66,11 @@
                 Params = new()
                 {
                     Text = { this.request.Message },
-                    Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
+                    Voice = voice,
                     Format = Format.Mp3,
-                    Temperature = 1.5f,
+                    Temperature = 1.3f,
                     Quality = Quality.Draft, // For the fastest
-                    Speed = 0.8f,
+                    Speed = 1.0f,
                     SpeechAttributes = 9,
                     StyleGuidance = 16,
                 }
@@ -86,5 +95,11 @@
     {
         thisJS.Dispose();
         await module.DisposeAsync();
+    }
+
+    private async Task<List<VoiceReturn>> GetVoices()
+    {
+        var response = await voicesClient.GetVoicesAsync();
+        return response;
     }
 }

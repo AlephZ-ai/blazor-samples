@@ -418,6 +418,33 @@ app.MapPost("/chat-stream-broken", (HttpContext context, [FromBody] ChatRequest 
 .WithName("ChatStreamBroken")
 .WithOpenApi();
 
+app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration) =>
+{
+    var request = new HttpRequestMessage(HttpMethod.Get, "https://api.play.ht/api/v2/voices")
+    {
+        Headers = { 
+            { "X-User-Id", configuration.GetValue<string>("playHT:user") }, 
+            { "Authorization", $"Bearer {configuration.GetValue<string>("playHT:key")}" },
+            { "accept", "application/json" }
+        }
+    };
+
+    var get = await playHT.SendAsync(request);
+    get.EnsureSuccessStatusCode();
+    List<VoiceReturn> x = null!;
+    try
+    {
+        x = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
+        x = x.Where(v => v.id.StartsWith("s3:")).ToList();
+    } catch (Exception ex)
+    {
+            Console.WriteLine(ex);
+        }
+    return x;
+})
+.WithName("GetVoices")
+.WithOpenApi();
+
 app.Run();
 
 async IAsyncEnumerable<ChatResponse> ChatStreamBrokenAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -448,3 +475,4 @@ string GetOpenAIKey(IConfiguration configuration)
     key = key[4..(key.Length - 1)];
     return key;
 }
+
