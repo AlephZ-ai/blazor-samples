@@ -5,20 +5,33 @@ using BlazorSamples.Web.Components;
 using BlazorSamples.Web.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
-using Vosk;
 using BlazorSamples.Web;
+using Whisper.net.Ggml;
+using Whisper.net;
 
-string models = ".models";
-string voskModels = $"{models}/vosk";
+var models = ".models";
+
+var voskModels = $"{models}/vosk";
 //var model = "vosk-model-en-us-0.22";
-var model = "vosk-model-small-en-us-0.15";
-var modelSpk = "vosk-model-spk-0.4";
-await DownloadVoskModelAsync(model);
-await DownloadVoskModelAsync(modelSpk);
-Vosk.Vosk.SetLogLevel(0);
+var voskModel = "vosk-model-small-en-us-0.15";
+var voskSpk = "vosk-model-spk-0.4";
+
+var whisperModels = $"{models}/whisper";
+//var whisperGgml = GgmlType.LargeV3;
+var whisperModel = GgmlType.Tiny;
+
+bool isVosk = true;
+if (isVosk)
+{
+    await VoskSpeechToTextProvider.DownloadModelsAsync(voskModels, voskModel, voskSpk);
+}
+else
+{
+    await WhisperSpeechToTextProvider.DownloadModelsAsync(whisperModels, whisperModel);
+}
+
 Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
 var builder = WebApplication.CreateBuilder(args);
-
 builder.AddServiceDefaults();
 builder.Services.AddSignalR();
 
@@ -31,23 +44,26 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
 builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
-builder.Services.AddSingleton(sp => new Model($"{voskModels}/{model}"));
-builder.Services.AddSingleton(sp => new SpkModel($"{voskModels}/{modelSpk}"));
-// TODO: Create a recoginzer per client in the signalr hub
-builder.Services.AddSingleton(sp =>
+if (isVosk)
 {
-    var model = sp.GetRequiredService<Model>();
-    var rec = new VoskRecognizer(model, 16000.0f);
-    return rec;
-});
+    builder.Services.AddSingleton<ISpeechToTextProvider>(sp => VoskSpeechToTextProvider.Create(voskModels, voskModel, voskSpk));
+}
+else
+{
+    builder.Services.AddSingleton<ISpeechToTextProvider>(sp => WhisperSpeechToTextProvider.Create(whisperModels, whisperModel));
+}
+
+
+
+
 
 var app = builder.Build();
-var rec = app.Services.GetRequiredService<VoskRecognizer>();
-var spkModel = app.Services.GetRequiredService<SpkModel>();
-rec.SetSpkModel(spkModel);
-rec.SetMaxAlternatives(0);
-rec.SetWords(true);
 
+
+
+
+// Pre-create the speech to text provider
+var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
 
 //app.UseResponseCompression();
 app.MapDefaultEndpoints();
@@ -75,26 +91,3 @@ app.MapRazorComponents<App>()
 
 app.MapHub<SpeechToTextHub>("/speechtotext");
 app.Run();
-
-async Task DownloadVoskModelAsync(string model)
-{
-    var modelPath = $"{voskModels}/{model}";
-    var zipFile = $"{voskModels}/{model}.zip";
-    var url = $"https://alphacephei.com/vosk/models/{model}.zip";
-    if (!Directory.Exists(modelPath))
-    {
-        Console.WriteLine($"Downloading Model {model}");
-        if (!Directory.Exists(models)) Directory.CreateDirectory(models);
-        if (!Directory.Exists(voskModels)) Directory.CreateDirectory(voskModels);
-        Directory.CreateDirectory(modelPath);
-        var handler = new HttpClientHandler();
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-        using var client = new HttpClient(handler);
-        using var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsByteArrayAsync();
-        await File.WriteAllBytesAsync(zipFile, content);
-        ZipFile.ExtractToDirectory(zipFile, voskModels);
-        File.Delete(zipFile);
-    }
-}
