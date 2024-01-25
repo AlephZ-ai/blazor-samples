@@ -1,4 +1,5 @@
-﻿using System.Threading.Channels;
+﻿using Nerdbank.Streams;
+using System.Threading.Channels;
 using Whisper.net;
 using Whisper.net.Ggml;
 
@@ -8,11 +9,12 @@ namespace BlazorSamples.Web
     {
         private readonly WhisperFactory _factory;
         private readonly WhisperProcessor _processor;
-        private readonly Channel<byte[]> _inChannel;
+        private static DuplexMemoryStream? _s;
+        private static Task? _processing;
+        private static Channel<string>? _channel;
         private WhisperSpeechToTextProvider(string models, GgmlType modelType)
         {
             var model = Enum.GetName(modelType);
-            _inChannel = Channel.CreateUnbounded<byte[]>();
             _factory = WhisperFactory.FromPath($"{models}/{model}.bin");
             _processor = _factory.CreateBuilder()
                 .WithLanguage("auto")
@@ -24,14 +26,44 @@ namespace BlazorSamples.Web
             return new WhisperSpeechToTextProvider(models, modelType);
         }
 
+        public async Task Process()
+        {
+            try
+            {
+                await foreach (var result in _processor.ProcessAsync(_s!))
+                {
+                    if (result is null || string.IsNullOrWhiteSpace(result.Text)) continue;
+                    _channel?.Writer.TryWrite(result.Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+
+            var x = _s;
+        }
+
         public async Task<AppendWavChunk> AppendWavChunk(byte[] buffer, int bytesRead)
         {
-            var ms = new MemoryStream(buffer, 0, bytesRead);
-            ms.Seek(0, SeekOrigin.Begin);
-            var concat = string.Empty;
-            await foreach (var result in _processor.ProcessAsync(ms))
+            if (_s is null)
             {
-                concat += result.Text;
+                _s = new DuplexMemoryStream();
+                _channel = Channel.CreateUnbounded<string>();
+            }
+
+            await _s.WriteAsync(buffer, 0, bytesRead);
+            await _s.FlushAsync();
+            if (_processing is null)
+            {
+                _processing = Process();
+            }
+
+            var concat = string.Empty;
+            while (_channel!.Reader.TryRead(out var result))
+            {
+                concat += result;
             }
 
             return new AppendWavChunk { SentenceFragment = string.IsNullOrWhiteSpace(concat) ? null : concat };
@@ -45,6 +77,11 @@ namespace BlazorSamples.Web
 
         public string? FinalResult()
         {
+            _processing = null;
+            _channel?.Writer.TryComplete();
+            _channel = null;
+            _s?.Dispose();
+            _s = null;
             return null;
         }
 

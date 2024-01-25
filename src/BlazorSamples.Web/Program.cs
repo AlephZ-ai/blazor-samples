@@ -20,7 +20,7 @@ var whisperModels = $"{models}/whisper";
 //var whisperGgml = GgmlType.LargeV3;
 var whisperModel = GgmlType.Tiny;
 
-bool isVosk = true;
+bool isVosk = false;
 if (isVosk)
 {
     await VoskSpeechToTextProvider.DownloadModelsAsync(voskModels, voskModel, voskSpk);
