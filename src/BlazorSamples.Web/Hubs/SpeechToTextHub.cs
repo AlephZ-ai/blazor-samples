@@ -109,10 +109,8 @@ namespace BlazorSamples.Web.Hubs
             if (!Directory.Exists("Files"))
                 Directory.CreateDirectory("Files");
 
-            await using var fileStream = File.OpenWrite(localFileName);
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                await fileStream.WriteAsync(buffer, 0, bytesRead);
                 var result = await provider.AppendWavChunk(buffer, bytesRead);
                 if (!string.IsNullOrWhiteSpace(result.CompleteSentence))
                 {
@@ -125,8 +123,8 @@ namespace BlazorSamples.Web.Hubs
             }
 
             var finalResult = provider.FinalResult();
-            await fileStream.FlushAsync();
-            if (!string.IsNullOrWhiteSpace(finalResult)) {
+            if (!string.IsNullOrWhiteSpace(finalResult))
+            {
                 await caller.ReceiveFinalResult(new FinalResult { text = finalResult });
             }
         }

@@ -37,11 +37,11 @@ namespace BlazorSamples.Web
             if (_rec.AcceptWaveform(buffer, bytesRead))
             {
                 var result = JsonSerializer.Deserialize<RegularResult>(_rec.Result());
-                return Task.FromResult(new AppendWavChunk { SentenceFragment = result?.text });
+                return Task.FromResult(new AppendWavChunk { CompleteSentence = result?.text });
             }
             else
             {
-                var result = JsonSerializer.Deserialize<PartialResult>(_rec.Result());
+                var result = JsonSerializer.Deserialize<PartialResult>(_rec.PartialResult());
                 return Task.FromResult(new AppendWavChunk { SentenceFragment = result?.partial });
             }
         }
