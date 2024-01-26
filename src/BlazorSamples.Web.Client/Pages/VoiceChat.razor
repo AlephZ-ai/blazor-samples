@@ -1,6 +1,8 @@
 ﻿@using System.Threading.Channels;
 @using Microsoft.AspNetCore.SignalR.Client;
+@using Grpc.Core
 @using BlazorSamples.Shared;
+@using BlazorSamples.PlayHT.Protos.V1
 @page "/voice-chat"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @implements ISpeechToTextClient
@@ -8,6 +10,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 @inject ApiClient Api
+@inject Tts.TtsClient client
 
 <PageTitle>Voice Chat</PageTitle>
 
@@ -46,15 +49,7 @@
 </div>
 
 <div>
-    <h5>Sentences</h5>
-    @foreach (var item in sentences)
-    {
-        <p>@item</p>
-    }
-</div>
-
-<div>
-    <p>Fragment: @fragment</p>
+    <h5>Request: @request</h5>
 </div>
 
 @code {
@@ -65,35 +60,37 @@
     private string Status => talkEnabled ? "Talking" : "Ready";
     private string? mimeType;
     private int bytesRecorded = 0;
-    private string? fragment;
     private string chatResponse = string.Empty;
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
-    private List<string> sentences = new List<string>();
+    private string? request;
+    private string voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json";
+    private List<VoiceReturn> voices = new List<VoiceReturn> { new() { id = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json", name = "Default" } };
     private BufferPosition bufferPosition = BufferPosition.First;
     private HubConnection? hub;
-    private Channel<string> sentencesQueue = Channel.CreateUnbounded<string>();
-    private Task sentenceProcessor = null!;
+    private Channel<string> requestQueue = Channel.CreateUnbounded<string>();
+    private Channel<byte[]> audioQueue = Channel.CreateUnbounded<byte[]>();
+    private Task requestProcessor = null!;
 
     public Task ReceiveResult(RegularResult message)
     {
-        sentencesQueue.Writer.TryWrite(message.text);
-        sentences.Add(message.text);
+        request = message.text;
         StateHasChanged();
+        requestQueue.Writer.TryWrite(message.text);
         return Task.CompletedTask;
     }
 
     public Task ReceivePartialResult(PartialResult message)
     {
-        fragment = message.partial;
+        request = message.partial;
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     public Task ReceiveFinalResult(FinalResult message)
     {
-        sentencesQueue.Writer.TryWrite(message.text);
-        sentences.Add(message.text);
+        request = message.text;
         StateHasChanged();
+        requestQueue.Writer.TryWrite(message.text);
         return Task.CompletedTask;
     }
 
@@ -119,19 +116,26 @@
         StateHasChanged();
     }
 
+    [JSInvokable]
+    public ValueTask<byte[]> Pop()
+    {
+        return audioQueue.Reader.ReadAsync();
+    }
+
     public async ValueTask DisposeAsync()
     {
-        sentencesQueue.Writer.TryComplete();
-        await sentenceProcessor;
+        requestQueue.Writer.TryComplete();
         await module.DisposeAsync();
         thisJS.Dispose();
+        await requestProcessor;
     }
 
     protected override async Task OnInitializedAsync()
     {
         thisJS = DotNetObjectReference.Create(this);
-        sentenceProcessor = ProcessSentences();
+        requestProcessor = ProcessRequest();
         await CheckConnection();
+        voices = await GetVoices();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -150,8 +154,7 @@
         {
             talkEnabled = true;
             bytesRecorded = 0;
-            sentences = new List<string>();
-            fragment = null;
+            request = null;
             chatResponse = string.Empty;
             StateHasChanged();
             bufferPosition = BufferPosition.First;
@@ -170,6 +173,12 @@
         }
     }
 
+    private async Task<List<VoiceReturn>> GetVoices()
+    {
+        var response = await Api.GetVoicesAsync();
+        return response;
+    }
+
     private async Task RefreshDevices()
     {
         if (await module.InvokeAsync<bool>("requestMicrophonePermission"))
@@ -181,18 +190,58 @@
         }
     }
 
-    private async Task ProcessSentences()
+    private bool DetectSentence(ref string sentence, out string leftOver)
     {
-        await foreach (var sentence in sentencesQueue.Reader.ReadAllAsync())
+        if (sentence.Contains(".") || sentence.Contains("!") || sentence.Contains("?"))
+        {
+            var split = sentence.Split(new[] { '.', '!', '?' }, 2);
+            sentence = split[0];
+            leftOver = split[1] ?? string.Empty;
+            return true;
+        }
+
+        leftOver = string.Empty;
+        return false;
+    }
+
+    private async Task ProcessRequest()
+    {
+        await foreach (var request in requestQueue.Reader.ReadAllAsync())
         {
             if (hub is not null)
             {
-                await hub.SendAsync("ProcessSentence", sentence);
-                var partials = Api.ChatStream(new ChatRequest() { Message = sentence });
+                await hub.SendAsync("ProcessSentence", request);
+                var partials = Api.ChatStream(new ChatRequest() { Message = request });
+                var sentence = string.Empty;
                 await foreach (var partial in partials)
                 {
                     chatResponse += partial?.Message ?? string.Empty;
                     StateHasChanged();
+                    sentence += partial?.Message ?? string.Empty;
+                    if (DetectSentence(ref sentence, out var leftOver))
+                    {
+                        var ttsRequest = new TtsRequest
+                        {
+                            Params = new()
+                            {
+                                Text = { sentence },
+                                Voice = voice,
+                                Format = Format.Mp3,
+                                Temperature = 1.3f,
+                                Quality = Quality.Draft,
+                                Speed = 1.0f
+                            }
+                        };
+
+                        var response = client.Tts(ttsRequest);
+                        await module.InvokeVoidAsync("startMediaSource", thisJS);
+                        await foreach (var item in response.ResponseStream.ReadAllAsync())
+                        {
+                            audioQueue.Writer.TryWrite(item.Data.ToByteArray());
+                        }
+
+                        sentence = leftOver;
+                    }
                 }
             }
         }

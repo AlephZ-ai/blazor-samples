@@ -375,7 +375,7 @@ app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest r
         Messages =
         {
             // The system message represents instructions or other guidance about how the assistant should behave
-            new ChatRequestSystemMessage("You are a helpful assistant. You will talk like a pirate."),
+            new ChatRequestSystemMessage("Respond very verbosely with many words and you are a helpful audio assistant, I've added speech capabilities to you.  Try to respond with as many words as possible like 1000s unless otherwise asked.  Always end your sentence with either . ? ! and no other symbols.  I'm using that to detect when you've started a new sentence in streaming mode.  Please refrain from using . ? ! anywhere else in your output you can omit it from things like Dr. and just put Dr without any character that would make me think end of sentence."),
             // User messages represent current or historical input from the end user
             new ChatRequestUserMessage(request.Message),
         }

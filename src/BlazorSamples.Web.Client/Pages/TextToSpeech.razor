@@ -52,11 +52,6 @@
         }
     }
 
-    private async Task Stop()
-    {
-        await module.InvokeVoidAsync("stopMediaSource");
-    }
-
     private async Task SubmitAsync()
     {
         StateHasChanged();
