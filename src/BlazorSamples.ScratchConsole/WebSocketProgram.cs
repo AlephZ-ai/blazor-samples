@@ -20,7 +20,7 @@ namespace BlazorSamples.ScratchConsole
             try
             {
                 // Adjust the URI to the appropriate WebSocket server address
-                await client.ConnectAsync(new Uri("wss://localhost:7006/ws"), CancellationToken.None);
+                await client.ConnectAsync(new Uri("wss://localhost:7006/stream"), CancellationToken.None);
                 Console.WriteLine("Connected!");
 
                 // Send a greeting message

@@ -4,7 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>1c08dc04-2c63-4ddc-b435-d458c083fc23</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vosk" Version="0.3.38" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
