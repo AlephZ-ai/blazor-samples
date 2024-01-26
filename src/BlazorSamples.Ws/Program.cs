@@ -11,13 +11,16 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Vosk;
 using Azure.AI.OpenAI;
+using Twilio.TwiML;
+using Twilio.AspNet.Common;
+using Twilio.AspNet.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddHttpClient();
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.All);
 builder.AddAzureOpenAI("openai");
-builder.Services.AddSingleton<IAudioConverter, AudioConverter>();
+builder.Services.AddScoped<IAudioConverter, AudioConverter>();
 bool isVosk = true;
 if (isVosk)
 {
@@ -56,9 +59,18 @@ else
     app.UseHttpsRedirection();
 }
 
+app.UseForwardedHeaders(); 
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => "Hello World!");
+app.MapGet("/voice", TwiMLResult (HttpRequest request) => {
+    var response = new VoiceResponse();
+    var connect = new Twilio.TwiML.Voice.Connect();
+    connect.Stream(url: $"wss://{request.Host}/stream");
+    response.Append(connect);
+    return response.ToTwiMLResult();
+});
+
 app.MapGet("/stream", async (
     HttpContext context,
     IHostApplicationLifetime appLifetime,
