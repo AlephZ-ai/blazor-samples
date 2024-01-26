@@ -35,15 +35,15 @@ namespace BlazorSamples.Web.Hubs
             var caller = Clients.Caller;
             if (position == BufferPosition.First)
             {
-                await OpenPipes();
+                await OpenPipes().ConfigureAwait(false);
                 ffmpegTask = StartFFMpegProcess(mimeType);
                 dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe(caller);
             }
 
-            await WriteToDotnetServerOutPipe(buffer);
+            await WriteToDotnetServerOutPipe(buffer).ConfigureAwait(false);
             if (position == BufferPosition.Last)
             {
-                await ClosePipes();
+                await ClosePipes().ConfigureAwait(false);
             }
         }
 
@@ -60,9 +60,9 @@ namespace BlazorSamples.Web.Hubs
             var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync();
             var ffmpegServerWriteOutPipeWaitForConnectionAsync = ffmpegServerWriteOutPipe.WaitForConnectionAsync();
             await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync(),
-                dotnetClientReadInFromFfmpegServerWriteOutPipe.ConnectAsync());
+                dotnetClientReadInFromFfmpegServerWriteOutPipe.ConnectAsync()).ConfigureAwait(false);
             await Task.WhenAll(dotnetServerWriteOutPipeWaitForConnectionAsync,
-                ffmpegServerWriteOutPipeWaitForConnectionAsync);
+                ffmpegServerWriteOutPipeWaitForConnectionAsync).ConfigureAwait(false);
         }
 
         private Task StartFFMpegProcess(string mimeType) =>
@@ -83,19 +83,19 @@ namespace BlazorSamples.Web.Hubs
 
         private async Task WriteToDotnetServerOutPipe(byte[] buffer)
         {
-            await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length);
+            await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
         }
 
         private async Task ClosePipes()
         {
             dotnetServerWriteOutPipe.Disconnect();
-            await ffmpegTask;
-            await dotnetServerWriteOutPipe.DisposeAsync();
-            await ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync();
+            await ffmpegTask.ConfigureAwait(false);
+            await dotnetServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
+            await ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
             ffmpegServerWriteOutPipe.Disconnect();
-            await dotnetTask;
-            await ffmpegServerWriteOutPipe.DisposeAsync();
-            await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync();
+            await dotnetTask.ConfigureAwait(false);
+            await ffmpegServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
+            await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
         }
 
         private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(ISpeechToTextClient caller)
@@ -109,23 +109,23 @@ namespace BlazorSamples.Web.Hubs
             if (!Directory.Exists("Files"))
                 Directory.CreateDirectory("Files");
 
-            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
             {
-                var result = await provider.AppendWavChunk(buffer, bytesRead);
+                var result = await provider.AppendWavChunk(buffer, bytesRead).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(result.CompleteSentence))
                 {
-                    await caller.ReceiveResult(new RegularResult { text = result.CompleteSentence });
+                    await caller.ReceiveResult(new RegularResult { text = result.CompleteSentence }).ConfigureAwait(false);
                 }
                 else if (!string.IsNullOrWhiteSpace(result.SentenceFragment))
                 {
-                    await caller.ReceivePartialResult(new PartialResult { partial = result.SentenceFragment });
+                    await caller.ReceivePartialResult(new PartialResult { partial = result.SentenceFragment }).ConfigureAwait(false);
                 }
             }
 
             var finalResult = provider.FinalResult();
             if (!string.IsNullOrWhiteSpace(finalResult))
             {
-                await caller.ReceiveFinalResult(new FinalResult { text = finalResult });
+                await caller.ReceiveFinalResult(new FinalResult { text = finalResult }).ConfigureAwait(false);
             }
         }
     }

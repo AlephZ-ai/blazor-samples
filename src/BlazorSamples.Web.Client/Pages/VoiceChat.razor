@@ -23,7 +23,7 @@
 </div>
 
 <div>
-    <button class="btn btn-primary" @onmousedown="StartSpeaking" @onmouseup="EndSpeaking">Hold to Talk</button>
+    <button class="btn btn-primary" @onmousedown="StartSpeaking">Hold to Talk</button>
 </div>
 
 <div>
@@ -39,17 +39,21 @@
 
 <div>
     <h5>Input Devices</h5>
-    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
-    <InputSelect @bind-Value="selectedDeviceId">
-        @foreach (var device in AudioInputDevices)
-        {
-            <option value="@device.DeviceId">@device.Label</option>
-        }
-    </InputSelect>
+    <div>
+        <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
+    </div>
+    <div>
+        <InputSelect @bind-Value="selectedDeviceId">
+            @foreach (var device in AudioInputDevices)
+            {
+                <option value="@device.DeviceId">@device.Label</option>
+            }
+        </InputSelect>
+    </div>
 </div>
 
 <div>
-    <h5>Request: @request</h5>
+    <p>Request: @request</p>
 </div>
 
 @code {
@@ -101,7 +105,6 @@
     {
         bytesRecorded += buffer.Length;
         StateHasChanged();
-        await CheckConnection();
         if (hub is not null)
         {
             await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType);
@@ -160,6 +163,7 @@
             chatResponse = string.Empty;
             StateHasChanged();
             bufferPosition = BufferPosition.First;
+            await CheckConnection();
             mimeType = await module.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
             StateHasChanged();
         }
@@ -171,14 +175,10 @@
         }
     }
 
-    private async Task EndSpeaking()
+    [JSInvokable]
+    public void EndSpeaking()
     {
-        if (talkEnabled)
-        {
-            bufferPosition = BufferPosition.Last;
-            StateHasChanged();
-            await module.InvokeVoidAsync("stopRecording", thisJS);
-        }
+        bufferPosition = BufferPosition.Last;
     }
 
     private async Task<List<VoiceReturn>> GetVoices()

@@ -10,19 +10,23 @@ export interface BrowserMediaDevice {
 }
 
 export function startMediaSource(page: DotNet.DotNetObject) {
-    var audioElement = document.getElementById('audioElement') as HTMLAudioElement;
-    var mediaSource = new MediaSource();
+    const audioElement = document.getElementById('audioElement') as HTMLAudioElement;
+    const mediaSource = new MediaSource();
     mediaSource.addEventListener('sourceopen', () => {
-        var sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+        const sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
         readBufferChunks(page, sourceBuffer);
         audioElement.play();
     }, { once: true });
 
     audioElement.src = URL.createObjectURL(mediaSource);
+    window.onmouseup = () => {
+        page.invokeMethod("EndSpeaking");
+        stopRecording()
+    }
 }
 
 async function readBufferChunks(page: DotNet.DotNetObject, sourceBuffer: SourceBuffer) {
-    var chunk: Uint8Array | null = await page.invokeMethodAsync("Pop");
+    const chunk: Uint8Array | null = await page.invokeMethodAsync("Pop");
     if (!chunk) return;
     sourceBuffer.appendBuffer(chunk);
     sourceBuffer.addEventListener('updateend', () => readBufferChunks(page, sourceBuffer), { once: true });
@@ -76,7 +80,6 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
         mimeType = recorder.mimeType;
         const track: MediaStreamTrack = stream.getAudioTracks()[0];
         const settings: MediaTrackSettings = track.getSettings();
-        const { channelCount, sampleRate }: MediaTrackSettings = settings;
         console.log(recorder);
         console.log(stream);
         console.log(track);

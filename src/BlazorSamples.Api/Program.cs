@@ -404,7 +404,6 @@ app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest r
 
     w.WriteEndArray();
     await w.FlushAsync(cancellationToken).ConfigureAwait(false);
-    await r.CompleteAsync().ConfigureAwait(false);
 })
 .WithName("ChatStream")
 .WithOpenApi();

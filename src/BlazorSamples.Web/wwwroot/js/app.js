@@ -1,17 +1,21 @@
 // scripts/app.ts
 var recorder;
 function startMediaSource(page) {
-  var audioElement = document.getElementById("audioElement");
-  var mediaSource = new MediaSource();
+  const audioElement = document.getElementById("audioElement");
+  const mediaSource = new MediaSource();
   mediaSource.addEventListener("sourceopen", () => {
-    var sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+    const sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
     readBufferChunks(page, sourceBuffer);
     audioElement.play();
   }, { once: true });
   audioElement.src = URL.createObjectURL(mediaSource);
+  window.onmouseup = () => {
+    page.invokeMethod("EndSpeaking");
+    stopRecording();
+  };
 }
 async function readBufferChunks(page, sourceBuffer) {
-  var chunk = await page.invokeMethodAsync("Pop");
+  const chunk = await page.invokeMethodAsync("Pop");
   if (!chunk)
     return;
   sourceBuffer.appendBuffer(chunk);
@@ -59,7 +63,6 @@ async function startRecording(page, deviceId) {
     mimeType = recorder.mimeType;
     const track = stream.getAudioTracks()[0];
     const settings = track.getSettings();
-    const { channelCount, sampleRate } = settings;
     console.log(recorder);
     console.log(stream);
     console.log(track);
