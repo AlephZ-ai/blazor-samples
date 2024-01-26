@@ -4,6 +4,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var openai = builder.AddAzureOpenAI("openai");
 var rpc = builder.AddProject<Projects.BlazorSamples_Rpc>("rpc");
+builder.AddProject<Projects.BlazorSamples_Ws>("ws")
+    .WithReference(openai);
+
 var api = builder.AddProject<Projects.BlazorSamples_Api>("api")
     .WithReference(openai);
 
@@ -14,7 +17,5 @@ builder.AddProject<Projects.BlazorSamples_Web>("web")
     .WithReference(rpc)
     .WithReference(api)
     .WithReference(legacy);
-
-builder.AddProject<Projects.BlazorSamples_Ws>("ws");
 
 builder.Build().Run();

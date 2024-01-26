@@ -10,12 +10,24 @@ using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Vosk;
+using Azure.AI.OpenAI;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.AddServiceDefaults();
 builder.Services.AddHttpClient();
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.All);
+builder.AddAzureOpenAI("openai");
+builder.Services.AddSingleton<IAudioConverter, AudioConverter>();
+bool isVosk = true;
+if (isVosk)
+{
+    builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
+}
+else
+{
+    builder.Services.AddSingleton<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
@@ -26,12 +38,24 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton<IAudioConverter, AudioConverter>();
-builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 var app = builder.Build();
 var stt = app.Services.GetRequiredService<ISpeechToTextProvider>();
 await stt.DownloadModelsAsync();
 app.MapDefaultEndpoints();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
+{
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => "Hello World!");
@@ -41,7 +65,7 @@ app.MapGet("/stream", async (
     IAudioConverter audioConverter,
     ISpeechToTextProvider recognizer,
     CancellationToken ct
-    ) =>
+) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
