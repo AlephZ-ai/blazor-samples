@@ -17,20 +17,18 @@ namespace BlazorSamples.Shared
         private NamedPipeServerStream ffmpegServerWriteOutPipe = null!;
         private NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe = null!;
         private Task ffmpegTask = null!;
+        private Task dotnetTask = null!;
 
         public async Task InitializationAsync()
         {
             await OpenPipes().ConfigureAwait(false);
             ffmpegTask = StartFFMpegProcess();
+            dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe();
         }
 
-        public async IAsyncEnumerable<byte[]> ProcessAudioBuffer(byte[] buffer)
+        public Task ProcessAudioBuffer(byte[] buffer)
         {
-            await WriteToDotnetServerOutPipe(buffer).ConfigureAwait(false);
-            await foreach (var converted in DotnetClientReadInFromFfmpegWriteServerOutPipe())
-            {
-                yield return converted;
-            }
+            return WriteToDotnetServerOutPipe(buffer);
         }
 
         private async Task OpenPipes()
@@ -38,13 +36,13 @@ namespace BlazorSamples.Shared
             var audioWriteDotnetServerOutToFfmpegClientInPipe = Guid.NewGuid().ToString();
             var audioWriteFfmpegServerOutToDotnetClientInPipe = Guid.NewGuid().ToString();
             dotnetServerWriteOutPipe =
-                new NamedPipeServerStream(audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.Out);
+                new NamedPipeServerStream(audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             ffmpegClientReadInFromDotnetServerWriteOutPipe = new NamedPipeClientStream(".",
-                audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.In);
+                audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             ffmpegServerWriteOutPipe =
-                new NamedPipeServerStream(audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.Out);
+                new NamedPipeServerStream(audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             dotnetClientReadInFromFfmpegServerWriteOutPipe = new NamedPipeClientStream(".",
-                audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.In);
+                audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync();
             var ffmpegServerWriteOutPipeWaitForConnectionAsync = ffmpegServerWriteOutPipe.WaitForConnectionAsync();
             await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync(),
@@ -57,9 +55,12 @@ namespace BlazorSamples.Shared
         {
             dotnetServerWriteOutPipe.Disconnect();
             await ffmpegTask.ConfigureAwait(false);
+            ffmpegTask = null!;
             await dotnetServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
             await ffmpegClientReadInFromDotnetServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
             ffmpegServerWriteOutPipe.Disconnect();
+            await dotnetTask.ConfigureAwait(false);
+            dotnetTask = null!;
             await ffmpegServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
             await dotnetClientReadInFromFfmpegServerWriteOutPipe.DisposeAsync().ConfigureAwait(false);
         }
@@ -81,13 +82,13 @@ namespace BlazorSamples.Shared
             await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
         }
 
-        private async IAsyncEnumerable<byte[]> DotnetClientReadInFromFfmpegWriteServerOutPipe()
+        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe()
         {
             int bytesRead;
             var buffer = new byte[4096];
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                yield return buffer[..bytesRead];
+                Console.WriteLine($"DotnetClientReadInFromFfmpegWriteServerOutPipe: {bytesRead}");
             }
         }
     }

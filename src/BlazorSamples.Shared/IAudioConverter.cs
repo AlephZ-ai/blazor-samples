@@ -9,7 +9,7 @@ namespace BlazorSamples.Shared
     public interface IAudioConverter
     {
         public Task InitializationAsync();
-        public IAsyncEnumerable<byte[]> ProcessAudioBuffer(byte[] buffer);
+        public Task ProcessAudioBuffer(byte[] buffer);
         public Task ClosePipes();
     }
 }

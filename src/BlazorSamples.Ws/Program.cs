@@ -150,18 +150,19 @@ static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter a
     var payload = jsonDocument.RootElement.GetProperty("media").GetProperty("payload").GetString()!;
     byte[] data = Convert.FromBase64String(payload);
     await audioConverter.InitializationAsync();
-    await foreach (var converted in audioConverter.ProcessAudioBuffer(data))
-    {
-        var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
-        if (result.CompleteSentence is not null)
-        {
-            Console.WriteLine(result.CompleteSentence);
-        }
-        else
-        {
-            Console.WriteLine(result.SentenceFragment);
-        }
-    }
+    await audioConverter.ProcessAudioBuffer(data);
+    // await foreach (var converted in audioConverter.ProcessAudioBuffer(data))
+    // {
+    //     var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
+    //     if (result.CompleteSentence is not null)
+    //     {
+    //         Console.WriteLine(result.CompleteSentence);
+    //     }
+    //     else
+    //     {
+    //         Console.WriteLine(result.SentenceFragment);
+    //     }
+    // }
 
     await audioConverter.ClosePipes();
 }
