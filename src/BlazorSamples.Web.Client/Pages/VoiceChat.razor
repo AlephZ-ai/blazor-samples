@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client;
+﻿@using System.Threading.Channels;
+@using Microsoft.AspNetCore.SignalR.Client;
 @using BlazorSamples.Shared;
 @page "/voice-chat"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
@@ -6,6 +7,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject ApiClient Api
 
 <PageTitle>Voice Chat</PageTitle>
 
@@ -16,10 +18,15 @@
 <div>
     <audio id="audioElement" controls></audio>
 </div>
+@if (chatResponse is not null)
+{
+    <div>
+        <label>Response</label>
+        <p>@chatResponse</p>
+    </div>
+}
 <div>
-    <button class="btn btn-primary" @onmousedown="StartSpeaking" @onmouseup="EndSpeaking">Hold
-        to
-        Talk</button>
+    <button class="btn btn-primary" @onmousedown="StartSpeaking" @onmouseup="EndSpeaking">Hold to Talk</button>
 </div>
 <div>
     <p>@Status</p>
@@ -29,8 +36,7 @@
 
 <div>
     <h5>Input Devices</h5>
-    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input
-        Devices</button>
+    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
     <InputSelect @bind-Value="selectedDeviceId">
         @foreach (var device in AudioInputDevices)
         {
@@ -67,28 +73,31 @@
     private string? mimeType;
     private int bytesRecorded = 0;
     private string? fragment;
+    private string chatResponse = string.Empty;
     private string? finalResult;
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
     private List<string> sentences = new List<string>();
     private BufferPosition bufferPosition = BufferPosition.First;
     private HubConnection? hub;
+    private Channel<string> processSentences = Channel.CreateUnbounded<string>();
     public Task ReceiveResult(RegularResult message)
     {
-        this.sentences.Add(message.text);
+        processSentences.Writer.TryWrite(message.text);
+        sentences.Add(message.text);
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     public Task ReceivePartialResult(PartialResult message)
     {
-        this.fragment = message.partial;
+        fragment = message.partial;
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     public Task ReceiveFinalResult(FinalResult message)
     {
-        this.finalResult = message.text;
+        finalResult = message.text;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -150,6 +159,7 @@
             sentences = new List<string>();
             fragment = null;
             finalResult = null;
+            chatResponse = string.Empty;
             StateHasChanged();
             bufferPosition = BufferPosition.First;
             await CheckConnection();
@@ -176,6 +186,23 @@
             devices = devices.Where(device => !string.IsNullOrWhiteSpace(device.DeviceId)).ToList();
             AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
             StateHasChanged();
+        }
+    }
+
+    private async Task ProcessSentences()
+    {
+        await foreach (var sentence in processSentences.Reader.ReadAllAsync())
+        {
+            if (hub is not null)
+            {
+                await hub.SendAsync("ProcessSentence", sentence);
+                var partials = Api.ChatStream(new ChatRequest() { Message = sentence });
+                await foreach (var partial in partials)
+                {
+                    chatResponse += partial?.Message ?? string.Empty;
+                    StateHasChanged();
+                }
+            }
         }
     }
 
