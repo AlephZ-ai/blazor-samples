@@ -64,12 +64,14 @@
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
     private string? request;
     private string voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json";
-    private List<VoiceReturn> voices = new List<VoiceReturn> { new() { id = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json", name = "Default" } };
+    private List<VoiceReturn> voices = new List<VoiceReturn> { new() { id =
+"s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json", name = "Default" } };
     private BufferPosition bufferPosition = BufferPosition.First;
     private HubConnection? hub;
     private Channel<string> requestQueue = Channel.CreateUnbounded<string>();
     private Channel<byte[]> audioQueue = Channel.CreateUnbounded<byte[]>();
     private Task requestProcessor = null!;
+    private bool playing;
 
     public Task ReceiveResult(RegularResult message)
     {
@@ -161,6 +163,12 @@
             mimeType = await module.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
             StateHasChanged();
         }
+
+        if (!playing)
+        {
+            playing = true;
+            await module.InvokeVoidAsync("startMediaSource", thisJS);
+        }
     }
 
     private async Task EndSpeaking()
@@ -208,19 +216,16 @@
     {
         await foreach (var request in requestQueue.Reader.ReadAllAsync())
         {
-            if (hub is not null)
+            var partials = Api.ChatStream(new ChatRequest() { Message = request });
+            var sentence = string.Empty;
+            await foreach (var partial in partials)
             {
-                await hub.SendAsync("ProcessSentence", request);
-                var partials = Api.ChatStream(new ChatRequest() { Message = request });
-                var sentence = string.Empty;
-                await foreach (var partial in partials)
+                chatResponse += partial?.Message ?? string.Empty;
+                StateHasChanged();
+                sentence += partial?.Message ?? string.Empty;
+                if (DetectSentence(ref sentence, out var leftOver))
                 {
-                    chatResponse += partial?.Message ?? string.Empty;
-                    StateHasChanged();
-                    sentence += partial?.Message ?? string.Empty;
-                    if (DetectSentence(ref sentence, out var leftOver))
-                    {
-                        var ttsRequest = new TtsRequest
+                    var ttsRequest = new TtsRequest
                         {
                             Params = new()
                             {
@@ -233,15 +238,13 @@
                             }
                         };
 
-                        var response = client.Tts(ttsRequest);
-                        await module.InvokeVoidAsync("startMediaSource", thisJS);
-                        await foreach (var item in response.ResponseStream.ReadAllAsync())
-                        {
-                            audioQueue.Writer.TryWrite(item.Data.ToByteArray());
-                        }
-
-                        sentence = leftOver;
+                    var response = client.Tts(ttsRequest);
+                    await foreach (var item in response.ResponseStream.ReadAllAsync())
+                    {
+                        audioQueue.Writer.TryWrite(item.Data.ToByteArray());
                     }
+
+                    sentence = leftOver;
                 }
             }
         }

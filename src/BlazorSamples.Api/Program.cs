@@ -219,7 +219,7 @@ app.MapGet("/people", (
         case "last":
             results = results.OrderBy(p => p.LastName);
             break;
-         case "age":
+        case "age":
             results = results.OrderBy(p => p.Age);
             break;
     }
@@ -312,7 +312,7 @@ Respond like you are a helpful assistant and you will talk like a pirate.";
 
 app.MapPost("/type-chat", async ([FromBody] ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator) =>
 {
-    // Translate natural language request 
+    // Translate natural language request
     var actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
     return actions;
 })
@@ -335,16 +335,16 @@ app.MapPost("/kernel-plugins", async ([FromBody] ChatRequest request, [FromServi
     kernel.ImportPluginFromType<WaitPlugin>();
 #pragma warning restore SKEXP0050 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0051 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-//    kernel.ImportPluginFromType<DocumentPlugin>();
+    //    kernel.ImportPluginFromType<DocumentPlugin>();
 #pragma warning restore SKEXP0051 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0052 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-//    kernel.ImportPluginFromType<TextMemoryPlugin>();
+    //    kernel.ImportPluginFromType<TextMemoryPlugin>();
 #pragma warning restore SKEXP0052 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0053 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-//    kernel.ImportPluginFromType<CalendarPlugin>();
-//    kernel.ImportPluginFromType<CloudDrivePlugin>();
-//    kernel.ImportPluginFromType<EmailPlugin>();
-//    kernel.ImportPluginFromType<OrganizationHierarchyPlugin>();
+    //    kernel.ImportPluginFromType<CalendarPlugin>();
+    //    kernel.ImportPluginFromType<CloudDrivePlugin>();
+    //    kernel.ImportPluginFromType<EmailPlugin>();
+    //    kernel.ImportPluginFromType<OrganizationHierarchyPlugin>();
 #pragma warning restore SKEXP0053 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0054 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     kernel.ImportPluginFromType<SearchUrlPlugin>();
@@ -375,7 +375,7 @@ app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest r
         Messages =
         {
             // The system message represents instructions or other guidance about how the assistant should behave
-            new ChatRequestSystemMessage("Respond very verbosely with many words and you are a helpful audio assistant, I've added speech capabilities to you.  Try to respond with as many words as possible like 1000s unless otherwise asked.  Always end your sentence with either . ? ! and no other symbols.  I'm using that to detect when you've started a new sentence in streaming mode.  Please refrain from using . ? ! anywhere else in your output you can omit it from things like Dr. and just put Dr without any character that would make me think end of sentence."),
+            new ChatRequestSystemMessage("Respond with about 2 to 3 sentences and you are a helpful audio assistant, I've added speech capabilities to you.  If you really need more sentence it's fine but try not to use less than 2 unless asked.  Always end your sentence with either . ? ! and no other symbols.  I'm using that to detect when you've started a new sentence in streaming mode.  Please refrain from using . ? ! anywhere else in your output you can omit it from things like Dr. and just put Dr without any character that would make me think end of sentence."),
             // User messages represent current or historical input from the end user
             new ChatRequestUserMessage(request.Message),
         }
@@ -422,8 +422,8 @@ app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration
 {
     var request = new HttpRequestMessage(HttpMethod.Get, "https://api.play.ht/api/v2/voices")
     {
-        Headers = { 
-            { "X-User-Id", configuration.GetValue<string>("playHT:user") }, 
+        Headers = {
+            { "X-User-Id", configuration.GetValue<string>("playHT:user") },
             { "Authorization", $"Bearer {configuration.GetValue<string>("playHT:key")}" },
             { "accept", "application/json" }
         }
@@ -432,8 +432,8 @@ app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration
     var get = await playHT.SendAsync(request);
     get.EnsureSuccessStatusCode();
     List<VoiceReturn> sampleList = null!;
-        sampleList = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
-        sampleList = sampleList.Where(v => v.id.StartsWith("s3:")).ToList();
+    sampleList = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
+    sampleList = sampleList.Where(v => v.id.StartsWith("s3:")).ToList();
     return sampleList;
 })
 .WithName("GetVoices")
