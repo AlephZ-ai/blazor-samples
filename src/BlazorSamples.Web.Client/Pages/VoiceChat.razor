@@ -13,8 +13,14 @@
 
 <p>This component demonstrates voice chat.</p>
 
-<audio id="audioElement" controls></audio>
-<button class="btn btn-primary" disabled="@(talkEnabled)" @onclick="StartSpeaking" @onmouseup="EndSpeaking">Hold to Talk</button>
+<div>
+    <audio id="audioElement" controls></audio>
+</div>
+<div>
+    <button class="btn btn-primary" @onmousedown="StartSpeaking" @onmouseup="EndSpeaking">Hold
+        to
+        Talk</button>
+</div>
 <div>
     <p>@Status</p>
     <p>mime: @mimeType</p>
@@ -23,8 +29,9 @@
 
 <div>
     <h5>Input Devices</h5>
-    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
-    <InputSelect disabled="@{talkEnabled}" @bind-Value="selectedDeviceId">
+    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input
+        Devices</button>
+    <InputSelect @bind-Value="selectedDeviceId">
         @foreach (var device in AudioInputDevices)
         {
             <option value="@device.DeviceId">@device.Label</option>
@@ -35,8 +42,8 @@
 @if (sentences.Count > 0)
 {
     <div>
-        <h5>Sentences</h5>
-        @foreach (var item in sentences)
+    <h5>Sentences</h5>
+    @foreach (var item in sentences)
         {
             <p>@item</p>
         }
@@ -54,7 +61,7 @@
 @code {
     private DotNetObjectReference<VoiceChat> thisJS = default!;
     private IJSObjectReference module = default!;
-    private bool talkEnabled = true;
+    private bool talkEnabled;
     private string? selectedDeviceId;
     private string Status => talkEnabled ? "Talking" : "Ready";
     private string? mimeType;
@@ -159,7 +166,7 @@
             StateHasChanged();
             await module.InvokeVoidAsync("stopRecording", thisJS);
         }
-    }   
+    }
 
     private async Task RefreshDevices()
     {
