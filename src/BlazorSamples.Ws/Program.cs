@@ -1,5 +1,5 @@
 using BlazorSamples.PlayHT.Protos.V1;
-using BlazorSamples.Ws;
+using BlazorSamples.Shared;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -26,18 +26,27 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddSingleton<IAudioConverter, AudioConverter>();
+builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
 var app = builder.Build();
-
+var stt = app.Services.GetRequiredService<ISpeechToTextProvider>();
+await stt.DownloadModelsAsync();
 app.MapDefaultEndpoints();
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => "Hello World!");
-app.MapGet("/stream", async (HttpContext context, CancellationToken ct) =>
+app.MapGet("/stream", async (
+    HttpContext context,
+    IHostApplicationLifetime appLifetime,
+    IAudioConverter audioConverter,
+    ISpeechToTextProvider recognizer,
+    CancellationToken ct
+    ) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await ProcessTwilioInputAudio(webSocket, context.RequestServices, ct).ConfigureAwait(false);
+        await ProcessTwilioInputAudio(webSocket, appLifetime, audioConverter, recognizer, ct).ConfigureAwait(false);
     }
     else
     {
@@ -47,112 +56,14 @@ app.MapGet("/stream", async (HttpContext context, CancellationToken ct) =>
 
 app.Run();
 
-static async Task Echo(WebSocket ws)
-{
-    var buffer = new byte[1024 * 4];
-    int echoCount = 0;
-    int maxEchoCount = 3;  // Set this to the number of echoes you want (e.g., 2 or 3)
-
-    while (echoCount < maxEchoCount)
-    {
-        var receiveResult = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-
-        if (receiveResult.MessageType == WebSocketMessageType.Close)
-        {
-            break;
-        }
-
-        await ws.SendAsync(
-            new ArraySegment<byte>(buffer, 0, receiveResult.Count),
-            receiveResult.MessageType,
-            receiveResult.EndOfMessage,
-            CancellationToken.None);
-
-        echoCount++;
-    }
-
-    await ws.CloseAsync(
-        WebSocketCloseStatus.NormalClosure,
-        $"Closing after {maxEchoCount} echoes",
-        CancellationToken.None);
-}
-
-static async Task ProcessAudio(WebSocket ws, string message, IConfiguration configuration, HttpClient authClient, CancellationToken ct)
-{
-    await foreach(var chunk in GetAudioAsync(message, configuration, authClient, ct))
-    {
-
-    }
-}
-
-static async IAsyncEnumerable<ReadOnlyMemory<byte>> GetAudioAsync(string message, IConfiguration configuration, HttpClient authClient, [EnumeratorCancellation] CancellationToken ct)
-{
-    var authRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.play.ht/api/v2/leases");
-    var user = configuration.GetValue<string>("playHT:user");
-    var apiKey = configuration.GetValue<string>("playHT:key");
-    authRequest.Headers.Add("X-User-Id", user);
-    authRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
-    var authResponse = await authClient.SendAsync(authRequest, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-    authResponse.EnsureSuccessStatusCode();
-    var lease = await authResponse.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
-    var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(1519257480).ToLocalTime();
-    var created = epoch.AddSeconds(BinaryPrimitives.ReadUInt32BigEndian(lease.AsSpan(64, 4)));
-    var duration = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lease.AsSpan(68, 4)));
-    var expires = created.Add(duration);
-    using var ms = new MemoryStream(lease[72..]);
-    var metadata = (await JsonSerializer.DeserializeAsync<IDictionary<string, JsonElement>>(ms, JsonSerializerOptions.Default, ct).ConfigureAwait(false))!;
-    var inferenceAddress = metadata["inference_address"].ToString();
-    var headers = new Metadata
-    {
-        { "Content-Type", "audio/mpeg" },
-    };
-
-    var request = new TtsRequest
-    {
-        Lease = ByteString.CopyFrom(lease),
-        Params = new()
-        {
-            Text = { message },
-            Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
-            Format = Format.Mp3,
-            Temperature = 1.5f,
-            Quality = Quality.Premium,
-            Speed = 0.8f,
-            SpeechAttributes = 9,
-            StyleGuidance = 16,
-        }
-    };
-
-
-    using var channel = GrpcChannel.ForAddress($"https://{inferenceAddress}");
-    var client = new Tts.TtsClient(channel);
-    AsyncServerStreamingCall<TtsResponse> response;
-    try
-    {
-        response = client.Tts(request, headers);
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e);
-        throw;
-    }
-
-    await foreach (var item in response.ResponseStream.ReadAllAsync())
-    {
-        yield return item.Data.Memory;
-    }
-}
-
-async Task ProcessTwilioInputAudio(
+static async Task ProcessTwilioInputAudio(
     WebSocket webSocket,
-    IServiceProvider serviceProvider,
+    IHostApplicationLifetime appLifetime,
+    IAudioConverter audioConverter,
+    ISpeechToTextProvider recognizer,
     CancellationToken ct
 )
 {
-    var appLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
-    var audioConverter = serviceProvider.GetRequiredService<AudioConverter>();
-    var recognizer = serviceProvider.GetRequiredService<VoskRecognizer>();
-
     var buffer = new byte[1024 * 4];
     WebSocketReceiveResult receiveResult;
     while (true)
@@ -162,13 +73,13 @@ async Task ProcessTwilioInputAudio(
         if (receiveResult.CloseStatus.HasValue || appLifetime.ApplicationStopping.IsCancellationRequested)
             break;
 
-        ProcessReceivedMessage(buffer, receiveResult.Count, audioConverter, recognizer);
+        await ProcessReceivedMessage(buffer, receiveResult.Count, audioConverter, recognizer);
     }
 
     await CloseWebSocketConnection(webSocket, appLifetime, receiveResult, ct).ConfigureAwait(false);
 }
 
-void ProcessReceivedMessage(byte[] buffer, int count, AudioConverter audioConverter, VoskRecognizer recognizer)
+static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConverter audioConverter, ISpeechToTextProvider recognizer)
 {
     using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer.AsSpan(0, count))!;
     var eventMessage = jsonDocument.RootElement.GetProperty("event").GetString();
@@ -182,7 +93,7 @@ void ProcessReceivedMessage(byte[] buffer, int count, AudioConverter audioConver
             HandleStartEvent(jsonDocument);
             break;
         case "media":
-            ProcessMediaEvent(jsonDocument, audioConverter, recognizer);
+            await ProcessMediaEvent(jsonDocument, audioConverter, recognizer);
             break;
         case "stop":
             Console.WriteLine("Event: stop");
@@ -190,32 +101,34 @@ void ProcessReceivedMessage(byte[] buffer, int count, AudioConverter audioConver
     }
 }
 
-void HandleStartEvent(JsonDocument jsonDocument)
+static void HandleStartEvent(JsonDocument jsonDocument)
 {
     var streamSid = jsonDocument.RootElement.GetProperty("streamSid").GetString();
     Console.WriteLine($"StreamId: {streamSid}");
 }
 
-void ProcessMediaEvent(JsonDocument jsonDocument, AudioConverter audioConverter, VoskRecognizer recognizer)
+static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter, ISpeechToTextProvider recognizer)
 {
     var payload = jsonDocument.RootElement.GetProperty("media").GetProperty("payload").GetString()!;
     byte[] data = Convert.FromBase64String(payload);
-    var (converted, convertedLength) = audioConverter.ConvertBuffer(data);
-    if (recognizer.AcceptWaveform(converted, convertedLength))
+    await audioConverter.InitializationAsync();
+    await foreach (var converted in audioConverter.ProcessAudioBuffer(data))
     {
-        var json = recognizer.Result();
-        var jsonDoc = JsonSerializer.Deserialize<JsonDocument>(json)!;
-        Console.WriteLine(jsonDoc.RootElement.GetProperty("text").GetString());
+        var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
+        if (result.CompleteSentence is not null)
+        {
+            Console.WriteLine(result.CompleteSentence);
+        }
+        else
+        {
+            Console.WriteLine(result.SentenceFragment);
+        }
     }
-    else
-    {
-        var json = recognizer.PartialResult();
-        var jsonDoc = JsonSerializer.Deserialize<JsonDocument>(recognizer.PartialResult())!;
-        Console.WriteLine(jsonDoc.RootElement.GetProperty("partial").GetString());
-    }
+
+    await audioConverter.ClosePipes();
 }
 
-async Task CloseWebSocketConnection(WebSocket webSocket, IHostApplicationLifetime appLifetime, WebSocketReceiveResult receiveResult, CancellationToken ct)
+static async Task CloseWebSocketConnection(WebSocket webSocket, IHostApplicationLifetime appLifetime, WebSocketReceiveResult receiveResult, CancellationToken ct)
 {
     if (receiveResult.CloseStatus.HasValue)
     {

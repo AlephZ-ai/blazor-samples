@@ -1,4 +1,4 @@
-﻿namespace BlazorSamples.Web
+﻿namespace BlazorSamples.Shared
 {
     public class DuplexMemoryStream : Stream
     {

@@ -1,9 +1,9 @@
-﻿using Nerdbank.Streams;
+﻿using BlazorSamples.Shared;
 using System.Threading.Channels;
 using Whisper.net;
 using Whisper.net.Ggml;
 
-namespace BlazorSamples.Web
+namespace BlazorSamples.Shared
 {
     public sealed class WhisperSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {
