@@ -7,24 +7,22 @@ namespace BlazorSamples.Web
 {
     public sealed class WhisperSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {
+        public static string Models = $"{ISpeechToTextProvider.Models}/whisper";
+        //public static GgmlType DefaultModel = GgmlType.LargeV3;
+        public static GgmlType DefaultModel = GgmlType.Tiny;
         private readonly WhisperFactory _factory;
         private readonly WhisperProcessor _processor;
         private static DuplexMemoryStream? _s;
         private static Task? _processing;
         private static Channel<string>? _channel;
-        private WhisperSpeechToTextProvider(string models, GgmlType modelType)
+        public WhisperSpeechToTextProvider()
         {
-            var model = Enum.GetName(modelType);
-            _factory = WhisperFactory.FromPath($"{models}/{model}.bin");
+            var model = Enum.GetName(DefaultModel);
+            _factory = WhisperFactory.FromPath($"{Models}/{model}.bin");
             _processor = _factory.CreateBuilder()
                 .WithLanguage("auto")
                 .Build();
          }
-
-        public static WhisperSpeechToTextProvider Create(string models, GgmlType modelType)
-        {
-            return new WhisperSpeechToTextProvider(models, modelType);
-        }
 
         public async Task Process()
         {
@@ -85,9 +83,9 @@ namespace BlazorSamples.Web
             return null;
         }
 
-        public static async Task DownloadModelsAsync(string models, GgmlType modelType)
+        public async Task DownloadModelsAsync()
         {
-            await DownloadModelAsync(models, modelType);
+            await DownloadModelAsync(Models, DefaultModel);
         }
 
         static async Task DownloadModelAsync(string models, GgmlType modelType)

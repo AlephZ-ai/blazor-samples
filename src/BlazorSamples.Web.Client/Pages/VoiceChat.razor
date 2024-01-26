@@ -1,6 +1,191 @@
-﻿@page "/voice-chat"
-<h3>VoiceChat</h3>
+﻿@using Microsoft.AspNetCore.SignalR.Client;
+@using BlazorSamples.Shared;
+@page "/voice-chat"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements ISpeechToTextClient
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Voice Chat</PageTitle>
+
+<h1>Voice Chat</h1>
+
+<p>This component demonstrates voice chat.</p>
+
+<audio id="audioElement" controls></audio>
+<button class="btn btn-primary" disabled="@(talkEnabled)" @onclick="StartSpeaking" @onmouseup="EndSpeaking">Hold to Talk</button>
+<div>
+    <p>@Status</p>
+    <p>mime: @mimeType</p>
+    <p>Bytes: @bytesRecorded</p>
+</div>
+
+<div>
+    <h5>Input Devices</h5>
+    <button class="btn btn-primary" @onclick="RefreshDevices">Refresh Audio Input Devices</button>
+    <InputSelect disabled="@{talkEnabled}" @bind-Value="selectedDeviceId">
+        @foreach (var device in AudioInputDevices)
+        {
+            <option value="@device.DeviceId">@device.Label</option>
+        }
+    </InputSelect>
+</div>
+
+@if (sentences.Count > 0)
+{
+    <div>
+        <h5>Sentences</h5>
+        @foreach (var item in sentences)
+        {
+            <p>@item</p>
+        }
+    </div>
+}
+
+<div>
+    <p>Fragment: @fragment</p>
+    @if (!string.IsNullOrWhiteSpace(finalResult))
+    {
+        <p>Final Result: @finalResult</p>
+    }
+</div>
 
 @code {
+    private DotNetObjectReference<VoiceChat> thisJS = default!;
+    private IJSObjectReference module = default!;
+    private bool talkEnabled = true;
+    private string? selectedDeviceId;
+    private string Status => talkEnabled ? "Talking" : "Ready";
+    private string? mimeType;
+    private int bytesRecorded = 0;
+    private string? fragment;
+    private string? finalResult;
+    private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
+    private List<string> sentences = new List<string>();
+    private BufferPosition bufferPosition = BufferPosition.First;
+    private HubConnection? hub;
+    public Task ReceiveResult(RegularResult message)
+    {
+        this.sentences.Add(message.text);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
+    public Task ReceivePartialResult(PartialResult message)
+    {
+        this.fragment = message.partial;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public Task ReceiveFinalResult(FinalResult message)
+    {
+        this.finalResult = message.text;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task DataAvailable(byte[] buffer, string mimeType)
+    {
+        bytesRecorded += buffer.Length;
+        StateHasChanged();
+        await CheckConnection();
+        if (hub is not null)
+        {
+            await hub.SendAsync("ProcessAudioBuffer", buffer, bufferPosition, mimeType);
+        }
+
+        if (bufferPosition == BufferPosition.First)
+            bufferPosition = BufferPosition.Middle;
+    }
+
+    [JSInvokable]
+    public async Task RecordingStopped()
+    {
+        talkEnabled = false;
+        StateHasChanged();
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+            hub = null;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await module.DisposeAsync();
+        thisJS.Dispose();
+    }
+
+    protected override void OnInitialized()
+    {
+        thisJS = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/app.js");
+            await RefreshDevices();
+            StateHasChanged();
+        }
+    }
+
+    private async Task StartSpeaking()
+    {
+        if (!talkEnabled)
+        {
+            talkEnabled = true;
+            bytesRecorded = 0;
+            sentences = new List<string>();
+            fragment = null;
+            finalResult = null;
+            StateHasChanged();
+            bufferPosition = BufferPosition.First;
+            await CheckConnection();
+            mimeType = await module.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task EndSpeaking()
+    {
+        if (talkEnabled)
+        {
+            bufferPosition = BufferPosition.Last;
+            StateHasChanged();
+            await module.InvokeVoidAsync("stopRecording", thisJS);
+        }
+    }   
+
+    private async Task RefreshDevices()
+    {
+        if (await module.InvokeAsync<bool>("requestMicrophonePermission"))
+        {
+            var devices = await module.InvokeAsync<List<BrowserMediaDevice>>("getAudioInputDevices") ?? new();
+            devices = devices.Where(device => !string.IsNullOrWhiteSpace(device.DeviceId)).ToList();
+            AudioInputDevices = devices ?? new List<BrowserMediaDevice>();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckConnection()
+    {
+        if (hub is null)
+        {
+            hub = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/speechtotext"))
+            .Build();
+
+            hub.On<RegularResult>("ReceiveResult", ReceiveResult);
+            hub.On<PartialResult>("ReceivePartialResult", ReceivePartialResult);
+            hub.On<FinalResult>("ReceiveFinalResult", ReceiveFinalResult);
+        }
+
+        if (hub.State != HubConnectionState.Connected)
+            await hub.StartAsync();
+    }
 }

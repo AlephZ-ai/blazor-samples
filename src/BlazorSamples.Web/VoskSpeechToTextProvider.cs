@@ -1,6 +1,7 @@
 ﻿using BlazorSamples.Shared;
 using System;
 using System.IO.Compression;
+using System.Reflection;
 using System.Text.Json;
 using Vosk;
 
@@ -8,6 +9,10 @@ namespace BlazorSamples.Web
 {
     public sealed class VoskSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {
+        public const string Models = $"{ISpeechToTextProvider.Models}/vosk";
+        //public const string defautModel = "vosk-model-en-us-0.22";
+        public const string DefautModel = "vosk-model-small-en-us-0.15";
+        public const string DefautSpk = "vosk-model-spk-0.4";
         static VoskSpeechToTextProvider()
         {
             Vosk.Vosk.SetLogLevel(0);
@@ -17,19 +22,14 @@ namespace BlazorSamples.Web
         private readonly VoskRecognizer _rec;
         private readonly Model _model;
         private readonly SpkModel _spk;
-        private VoskSpeechToTextProvider(string models, string model, string spk)
+        public VoskSpeechToTextProvider()
         {
-            _model = new Model($"{models}/{model}");
-            _spk = new SpkModel($"{models}/{spk}");
+            _model = new Model($"{Models}/{DefautModel}");
+            _spk = new SpkModel($"{Models}/{DefautSpk}");
             _rec = new VoskRecognizer(_model, 16000.0f);
             _rec.SetSpkModel(_spk);
             _rec.SetMaxAlternatives(0);
             _rec.SetWords(true);
-        }
-
-        public static VoskSpeechToTextProvider Create(string models, string model, string spk)
-        {
-            return new VoskSpeechToTextProvider(models, model, spk);
         }
 
         public Task<AppendWavChunk> AppendWavChunk(byte[] buffer, int bytesRead)
@@ -59,10 +59,10 @@ namespace BlazorSamples.Web
             _spk.Dispose();
         }
 
-        public static async Task DownloadModelsAsync(string models, string model, string spk)
+        public async Task DownloadModelsAsync()
         {
-            await DownloadModelAsync(models, model);
-            await DownloadModelAsync(models, spk);
+            await DownloadModelAsync(Models, DefautModel);
+            await DownloadModelAsync(Models, DefautSpk);
         }
 
         static async Task DownloadModelAsync(string models, string model)

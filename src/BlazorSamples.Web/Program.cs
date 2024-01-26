@@ -9,27 +9,6 @@ using BlazorSamples.Web;
 using Whisper.net.Ggml;
 using Whisper.net;
 
-var models = ".models";
-
-var voskModels = $"{models}/vosk";
-//var model = "vosk-model-en-us-0.22";
-var voskModel = "vosk-model-small-en-us-0.15";
-var voskSpk = "vosk-model-spk-0.4";
-
-var whisperModels = $"{models}/whisper";
-//var whisperGgml = GgmlType.LargeV3;
-var whisperModel = GgmlType.Tiny;
-
-bool isVosk = false;
-if (isVosk)
-{
-    await VoskSpeechToTextProvider.DownloadModelsAsync(voskModels, voskModel, voskSpk);
-}
-else
-{
-    await WhisperSpeechToTextProvider.DownloadModelsAsync(whisperModels, whisperModel);
-}
-
 Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -44,13 +23,14 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpClient<ApiClient>(client => client.BaseAddress = new("http://api"));
 builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = new("http://legacy"));
+bool isVosk = true;
 if (isVosk)
 {
-    builder.Services.AddSingleton<ISpeechToTextProvider>(sp => VoskSpeechToTextProvider.Create(voskModels, voskModel, voskSpk));
+    builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
 }
 else
 {
-    builder.Services.AddSingleton<ISpeechToTextProvider>(sp => WhisperSpeechToTextProvider.Create(whisperModels, whisperModel));
+    builder.Services.AddSingleton<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
 }
 
 
@@ -62,8 +42,8 @@ var app = builder.Build();
 
 
 
-// Pre-create the speech to text provider
-var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
+var stt = app.Services.GetRequiredService<ISpeechToTextProvider>();
+await stt.DownloadModelsAsync();
 
 //app.UseResponseCompression();
 app.MapDefaultEndpoints();
