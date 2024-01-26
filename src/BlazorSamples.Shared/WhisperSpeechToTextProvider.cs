@@ -22,7 +22,7 @@ namespace BlazorSamples.Shared
             _processor = _factory.CreateBuilder()
                 .WithLanguage("auto")
                 .Build();
-         }
+        }
 
         public async Task Process()
         {
@@ -83,7 +83,7 @@ namespace BlazorSamples.Shared
             return null;
         }
 
-        public async Task DownloadModelsAsync()
+        public static async Task DownloadModelsAsync()
         {
             await DownloadModelAsync(Models, DefaultModel);
         }

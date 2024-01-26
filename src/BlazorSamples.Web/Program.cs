@@ -26,10 +26,12 @@ builder.Services.AddHttpClient<LegacyApiClient>(client => client.BaseAddress = n
 bool isVosk = true;
 if (isVosk)
 {
+    await VoskSpeechToTextProvider.DownloadModelsAsync();
     builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
 }
 else
 {
+    await WhisperSpeechToTextProvider.DownloadModelsAsync();
     builder.Services.AddSingleton<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
 }
 
@@ -42,8 +44,7 @@ var app = builder.Build();
 
 
 
-var stt = app.Services.GetRequiredService<ISpeechToTextProvider>();
-await stt.DownloadModelsAsync();
+var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
 
 //app.UseResponseCompression();
 app.MapDefaultEndpoints();

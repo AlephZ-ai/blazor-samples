@@ -59,7 +59,7 @@ namespace BlazorSamples.Shared
             _spk.Dispose();
         }
 
-        public async Task DownloadModelsAsync()
+        public static async Task DownloadModelsAsync()
         {
             await DownloadModelAsync(Models, DefautModel);
             await DownloadModelAsync(Models, DefautSpk);

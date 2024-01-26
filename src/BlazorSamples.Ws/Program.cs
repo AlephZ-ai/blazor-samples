@@ -14,6 +14,7 @@ using Azure.AI.OpenAI;
 using Twilio.TwiML;
 using Twilio.AspNet.Common;
 using Twilio.AspNet.Core;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -24,10 +25,12 @@ builder.Services.AddScoped<IAudioConverter, AudioConverter>();
 bool isVosk = true;
 if (isVosk)
 {
+    await VoskSpeechToTextProvider.DownloadModelsAsync();
     builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
 }
 else
 {
+    await WhisperSpeechToTextProvider.DownloadModelsAsync();
     builder.Services.AddSingleton<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
 }
 
@@ -44,8 +47,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
-var stt = app.Services.GetRequiredService<ISpeechToTextProvider>();
-await stt.DownloadModelsAsync();
+var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
 app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
@@ -59,11 +61,12 @@ else
     app.UseHttpsRedirection();
 }
 
-app.UseForwardedHeaders(); 
+app.UseForwardedHeaders();
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => "Hello World!");
-app.MapGet("/voice", TwiMLResult (HttpRequest request) => {
+app.MapPost("/voice", TwiMLResult (HttpRequest request) =>
+{
     var response = new VoiceResponse();
     var connect = new Twilio.TwiML.Voice.Connect();
     connect.Stream(url: $"wss://{request.Host}/stream");
@@ -119,7 +122,6 @@ static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConvert
 {
     using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer.AsSpan(0, count))!;
     var eventMessage = jsonDocument.RootElement.GetProperty("event").GetString();
-
     switch (eventMessage)
     {
         case "connected":
