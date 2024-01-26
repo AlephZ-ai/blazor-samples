@@ -76,14 +76,9 @@ export async function startRecording(page: DotNet.DotNetObject, deviceId: string
         const constraints: MediaStreamConstraints = { audio: { deviceId: deviceId } };
         const options: MediaRecorderOptions = { mimeType: mimeType };
         const stream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        stopRecording();
         recorder = new MediaRecorder(stream, options);
         mimeType = recorder.mimeType;
-        const track: MediaStreamTrack = stream.getAudioTracks()[0];
-        const settings: MediaTrackSettings = track.getSettings();
-        console.log(recorder);
-        console.log(stream);
-        console.log(track);
-        console.log(settings);
         let stopped: boolean = false;
         recorder.ondataavailable = async (e: BlobEvent) => {
             const data: ArrayBuffer = await e.data.arrayBuffer();

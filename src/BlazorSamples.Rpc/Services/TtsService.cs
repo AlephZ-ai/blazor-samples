@@ -18,12 +18,12 @@ namespace BlazorSamples.Rpc.Services
         public override async Task Tts(TtsRequest request, IServerStreamWriter<TtsResponse> responseStream, ServerCallContext context)
         {
             var ct = context.CancellationToken;
-            await EnsureClientInitialized(ct);
+            await EnsureClientInitialized(ct).ConfigureAwait(false);
             request.Lease = _lease;
-            using var call = _client!.Tts(request, context.RequestHeaders, context.Deadline, context.CancellationToken);
-            await foreach (var response in call.ResponseStream.ReadAllAsync(ct))
+            using var call = _client!.Tts(request, context.RequestHeaders, context.Deadline, ct);
+            await foreach (var response in call.ResponseStream.ReadAllAsync(ct).WithCancellation(ct).ConfigureAwait(false))
             {
-                await responseStream.WriteAsync(response, ct);
+                await responseStream.WriteAsync(response, ct).ConfigureAwait(false);
             }
         }
 
@@ -36,7 +36,7 @@ namespace BlazorSamples.Rpc.Services
         {
             if (_client is null)
             {
-                var (client, channel, lease) = await InitializeClient(ct);
+                var (client, channel, lease) = await InitializeClient(ct).ConfigureAwait(false);
                 lock (_lock)
                 {
                     if (_client is null)
@@ -58,9 +58,9 @@ namespace BlazorSamples.Rpc.Services
 
             var authResponse = await authClient.SendAsync(authRequest, HttpCompletionOption.ResponseHeadersRead, ct);
             authResponse.EnsureSuccessStatusCode();
-            var lease = await authResponse.Content.ReadAsByteArrayAsync(ct);
+            var lease = await authResponse.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
             using var ms = new MemoryStream(lease[72..]);
-            var metadata = (await JsonSerializer.DeserializeAsync<IDictionary<string, JsonElement>>(ms, JsonSerializerOptions.Default, ct))!;
+            var metadata = (await JsonSerializer.DeserializeAsync<IDictionary<string, JsonElement>>(ms, JsonSerializerOptions.Default, ct).ConfigureAwait(false))!;
             var inferenceAddress = metadata["inference_address"].ToString();
             var leaseByteString = ByteString.CopyFrom(lease);
             // Can't use DI Tts.TtsClient because it needs dynamic address but channels are thread safe

@@ -87,9 +87,9 @@ else
 
 app.UseCors();
 
-app.MapPost("/type-kernel", async ([FromBody] ChatRequest request, [FromServices] PluginProgramTranslator translator, [FromServices] ProgramInterpreter interpreter) =>
+app.MapPost("/type-kernel", async ([FromBody] ChatRequest request, [FromServices] PluginProgramTranslator translator, [FromServices] ProgramInterpreter interpreter, CancellationToken ct) =>
 {
-    using var program = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
+    using var program = await translator.TranslateAsync(request.Message!, ct).ConfigureAwait(false);
     var chatResponse = new ChatResponse();
     if (program is not null && program.IsComplete)
     {

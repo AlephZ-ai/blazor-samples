@@ -9,11 +9,11 @@ namespace BlazorSamples.Shared
 {
     public sealed class LegacyApiClient(HttpClient httpClient)
     {
-        public async Task<ChatResponse?> TypeKernelAsync(ChatRequest request)
+        public async Task<ChatResponse?> TypeKernelAsync(ChatRequest request, CancellationToken ct = default)
         {
-            var response = await httpClient.PostAsJsonAsync("/type-kernel", request).ConfigureAwait(false);
+            var response = await httpClient.PostAsJsonAsync("/type-kernel", request, ct).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<ChatResponse>().ConfigureAwait(false);
+            return await response.Content.ReadFromJsonAsync<ChatResponse>(ct).ConfigureAwait(false);
         }
     }
 }

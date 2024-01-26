@@ -278,7 +278,7 @@ app.MapDelete("/person/{id:int}", ([FromRoute] int id) =>
 .WithName("DeletePerson")
 .WithOpenApi();
 
-app.MapPost("/chat", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI) =>
+app.MapPost("/chat", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken ct) =>
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
@@ -292,34 +292,34 @@ app.MapPost("/chat", async ([FromBody] ChatRequest request, [FromServices] OpenA
         }
     };
 
-    Response<ChatCompletions> response = await openAI.GetChatCompletionsAsync(chatCompletionsOptions).ConfigureAwait(false);
+    Response<ChatCompletions> response = await openAI.GetChatCompletionsAsync(chatCompletionsOptions, ct).ConfigureAwait(false);
     return new ChatResponse { Message = response.Value.Choices[0].Message.Content };
 })
 .WithName("Chat")
 .WithOpenApi();
 
-app.MapPost("/kernel", async ([FromBody] ChatRequest request, [FromServices] Kernel kernel) =>
+app.MapPost("/kernel", async ([FromBody] ChatRequest request, [FromServices] Kernel kernel, CancellationToken ct) =>
 {
     var promptTemplate = @"{{$input}}
 
 Respond like you are a helpful assistant and you will talk like a pirate.";
 
-    var response = await kernel.InvokePromptAsync(promptTemplate, new() { ["input"] = request.Message }).ConfigureAwait(false);
+    var response = await kernel.InvokePromptAsync(promptTemplate, new() { ["input"] = request.Message }, null, null, ct).ConfigureAwait(false);
     return new ChatResponse { Message = response.ToString() };
 })
 .WithName("Kernel")
 .WithOpenApi();
 
-app.MapPost("/type-chat", async ([FromBody] ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator) =>
+app.MapPost("/type-chat", async ([FromBody] ChatRequest request, [FromServices] JsonTranslator<CalendarActions> translator, CancellationToken ct) =>
 {
     // Translate natural language request
-    var actions = await translator.TranslateAsync(request.Message!).ConfigureAwait(false);
+    var actions = await translator.TranslateAsync(request.Message!, ct).ConfigureAwait(false);
     return actions;
 })
 .WithName("TypeChat")
 .WithOpenApi();
 
-app.MapPost("/kernel-plugins", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI) =>
+app.MapPost("/kernel-plugins", async ([FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken ct) =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
     kernelBuilder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
@@ -361,13 +361,13 @@ You will take advantage of all plugins a lot, I am here to play around with plug
 Please just continue to chat with me about my questions and you experiences with using the tools.  I want to know all about why you chose the tool and were you how well it met your criteria after using it.
 Everytime you use a plugin, you will be prompted to chat with me about your experience with the plugin.  I will ask you questions about the plugin and you will answer them.I will then use your answers to improve the plugin.";
 
-    var response = await kernel.InvokePromptAsync(promptTemplate, new(settings) { ["input"] = request.Message }).ConfigureAwait(false);
+    var response = await kernel.InvokePromptAsync(promptTemplate, new(settings) { ["input"] = request.Message }, null, null, ct).ConfigureAwait(false);
     return new ChatResponse { Message = response.ToString() };
 })
 .WithName("KernelPlugins")
 .WithOpenApi();
 
-app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
+app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken ct) =>
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
@@ -388,36 +388,36 @@ app.MapPost("/chat-stream", async (HttpContext context, [FromBody] ChatRequest r
     context.Response.Headers["Expires"] = "-1";
     var r = context.Features.Get<IHttpResponseBodyFeature>()!;
     r.DisableBuffering();
-    await r.StartAsync(cancellationToken).ConfigureAwait(false);
+    await r.StartAsync(ct).ConfigureAwait(false);
     await using var rs = r.Stream;
     await using var w = new Utf8JsonWriter(rs);
     w.WriteStartArray();
-    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
-    await foreach (var response in responseStream.WithCancellation(cancellationToken))
+    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, ct).ConfigureAwait(false);
+    await foreach (var response in responseStream.WithCancellation(ct).ConfigureAwait(false))
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
         w.WriteStartObject();
         w.WriteString("message", response.ContentUpdate);
         w.WriteEndObject();
-        await w.FlushAsync(cancellationToken).ConfigureAwait(false);
+        await w.FlushAsync(ct).ConfigureAwait(false);
     }
 
     w.WriteEndArray();
-    await w.FlushAsync(cancellationToken).ConfigureAwait(false);
+    await w.FlushAsync(ct).ConfigureAwait(false);
 })
 .WithName("ChatStream")
 .WithOpenApi();
 
-app.MapPost("/chat-stream-broken", (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken cancellationToken) =>
+app.MapPost("/chat-stream-broken", (HttpContext context, [FromBody] ChatRequest request, [FromServices] OpenAIClient openAI, CancellationToken ct) =>
 {
     var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>();
     bodyFeature?.DisableBuffering();
-    return ChatStreamBrokenAsync(request, openAI, cancellationToken);
+    return ChatStreamBrokenAsync(request, openAI, ct);
 })
 .WithName("ChatStreamBroken")
 .WithOpenApi();
 
-app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration) =>
+app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration, CancellationToken ct) =>
 {
     var request = new HttpRequestMessage(HttpMethod.Get, "https://api.play.ht/api/v2/voices")
     {
@@ -428,10 +428,10 @@ app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration
         }
     };
 
-    var get = await playHT.SendAsync(request);
+    var get = await playHT.SendAsync(request, ct).ConfigureAwait(false);
     get.EnsureSuccessStatusCode();
     List<VoiceReturn> sampleList = null!;
-    sampleList = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>())!;
+    sampleList = (await get.Content.ReadFromJsonAsync<List<VoiceReturn>>(ct).ConfigureAwait(false))!;
     sampleList = sampleList.Where(v => v.id.StartsWith("s3:")).ToList();
     return sampleList;
 })
@@ -440,7 +440,7 @@ app.MapGet("/get-voices", async (HttpClient playHT, IConfiguration configuration
 
 app.Run();
 
-async IAsyncEnumerable<ChatResponse> ChatStreamBrokenAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken cancellationToken)
+async IAsyncEnumerable<ChatResponse> ChatStreamBrokenAsync(ChatRequest request, OpenAIClient openAI, [EnumeratorCancellation] CancellationToken ct)
 {
     var chatCompletionsOptions = new ChatCompletionsOptions()
     {
@@ -454,10 +454,10 @@ async IAsyncEnumerable<ChatResponse> ChatStreamBrokenAsync(ChatRequest request, 
         }
     };
 
-    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
-    await foreach (var response in responseStream)
+    var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, ct).ConfigureAwait(false);
+    await foreach (var response in responseStream.WithCancellation(ct).ConfigureAwait(false))
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
         yield return new ChatResponse { Message = response.ContentUpdate };
     }
 }

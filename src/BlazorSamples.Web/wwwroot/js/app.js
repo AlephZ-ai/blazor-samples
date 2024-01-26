@@ -59,14 +59,9 @@ async function startRecording(page, deviceId) {
     const constraints = { audio: { deviceId } };
     const options = { mimeType };
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    stopRecording();
     recorder = new MediaRecorder(stream, options);
     mimeType = recorder.mimeType;
-    const track = stream.getAudioTracks()[0];
-    const settings = track.getSettings();
-    console.log(recorder);
-    console.log(stream);
-    console.log(track);
-    console.log(settings);
     let stopped = false;
     recorder.ondataavailable = async (e) => {
       const data = await e.data.arrayBuffer();
