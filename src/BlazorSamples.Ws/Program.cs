@@ -37,20 +37,20 @@ static async Task Echo(WebSocket webSocket)
     var receiveResult = await webSocket.ReceiveAsync(
         new ArraySegment<byte>(buffer), CancellationToken.None);
 
-    while (!receiveResult.CloseStatus.HasValue)
+    // Check if a message has been received
+    if (!receiveResult.CloseStatus.HasValue)
     {
+        // Echo the received message back to the client
         await webSocket.SendAsync(
             new ArraySegment<byte>(buffer, 0, receiveResult.Count),
             receiveResult.MessageType,
             receiveResult.EndOfMessage,
             CancellationToken.None);
-
-        receiveResult = await webSocket.ReceiveAsync(
-            new ArraySegment<byte>(buffer), CancellationToken.None);
     }
 
+    // Close the WebSocket connection
     await webSocket.CloseAsync(
-        receiveResult.CloseStatus.Value,
-        receiveResult.CloseStatusDescription,
+        WebSocketCloseStatus.NormalClosure,
+        "Closing after one echo",
         CancellationToken.None);
 }
