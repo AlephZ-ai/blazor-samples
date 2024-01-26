@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <StartupObject>BlazorSamples.ScratchConsole.PlayHTProgram</StartupObject>
+    <StartupObject>BlazorSamples.ScratchConsole.WebSocketProgram</StartupObject>
     <UserSecretsId>d1479501-3523-405a-b5d1-8914ffc5e4d3</UserSecretsId>
   </PropertyGroup>
 

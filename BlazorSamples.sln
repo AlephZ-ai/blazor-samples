@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorSamples.ScratchConsol
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorSamples.Rpc", "src\BlazorSamples.Rpc\BlazorSamples.Rpc.csproj", "{83A90250-F0D8-40AC-9376-26E25EAE275F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorSamples.Ws", "src\BlazorSamples.Ws\BlazorSamples.Ws.csproj", "{6C39F5ED-34DF-47FB-9549-EC1F65EEAFB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{83A90250-F0D8-40AC-9376-26E25EAE275F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83A90250-F0D8-40AC-9376-26E25EAE275F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83A90250-F0D8-40AC-9376-26E25EAE275F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C39F5ED-34DF-47FB-9549-EC1F65EEAFB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C39F5ED-34DF-47FB-9549-EC1F65EEAFB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C39F5ED-34DF-47FB-9549-EC1F65EEAFB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C39F5ED-34DF-47FB-9549-EC1F65EEAFB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

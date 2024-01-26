@@ -15,4 +15,6 @@ builder.AddProject<Projects.BlazorSamples_Web>("web")
     .WithReference(api)
     .WithReference(legacy);
 
+builder.AddProject<Projects.BlazorSamples_Ws>("ws");
+
 builder.Build().Run();
