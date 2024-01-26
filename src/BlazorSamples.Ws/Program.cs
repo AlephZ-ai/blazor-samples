@@ -34,23 +34,30 @@ app.Run();
 static async Task Echo(WebSocket webSocket)
 {
     var buffer = new byte[1024 * 4];
-    var receiveResult = await webSocket.ReceiveAsync(
-        new ArraySegment<byte>(buffer), CancellationToken.None);
+    int echoCount = 0;
+    int maxEchoCount = 3;  // Set this to the number of echoes you want (e.g., 2 or 3)
 
-    // Check if a message has been received
-    if (!receiveResult.CloseStatus.HasValue)
+    while (echoCount < maxEchoCount)
     {
-        // Echo the received message back to the client
+        var receiveResult = await webSocket.ReceiveAsync(
+            new ArraySegment<byte>(buffer), CancellationToken.None);
+
+        if (receiveResult.MessageType == WebSocketMessageType.Close)
+        {
+            break;
+        }
+
         await webSocket.SendAsync(
             new ArraySegment<byte>(buffer, 0, receiveResult.Count),
             receiveResult.MessageType,
             receiveResult.EndOfMessage,
             CancellationToken.None);
+
+        echoCount++;
     }
 
-    // Close the WebSocket connection
     await webSocket.CloseAsync(
         WebSocketCloseStatus.NormalClosure,
-        "Closing after one echo",
+        $"Closing after {maxEchoCount} echoes",
         CancellationToken.None);
 }
