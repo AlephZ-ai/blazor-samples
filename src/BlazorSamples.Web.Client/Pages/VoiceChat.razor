@@ -18,16 +18,16 @@
 <div>
     <audio id="audioElement" controls></audio>
 </div>
-@if (chatResponse is not null)
-{
-    <div>
-        <label>Response</label>
-        <p>@chatResponse</p>
-    </div>
-}
+
 <div>
     <button class="btn btn-primary" @onmousedown="StartSpeaking" @onmouseup="EndSpeaking">Hold to Talk</button>
 </div>
+
+<div>
+    <label>Response</label>
+    <p>@chatResponse</p>
+</div>
+
 <div>
     <p>@Status</p>
     <p>mime: @mimeType</p>
@@ -45,23 +45,16 @@
     </InputSelect>
 </div>
 
-@if (sentences.Count > 0)
-{
-    <div>
+<div>
     <h5>Sentences</h5>
     @foreach (var item in sentences)
-        {
-            <p>@item</p>
-        }
-    </div>
-}
+    {
+        <p>@item</p>
+    }
+</div>
 
 <div>
     <p>Fragment: @fragment</p>
-    @if (!string.IsNullOrWhiteSpace(finalResult))
-    {
-        <p>Final Result: @finalResult</p>
-    }
 </div>
 
 @code {
@@ -74,15 +67,16 @@
     private int bytesRecorded = 0;
     private string? fragment;
     private string chatResponse = string.Empty;
-    private string? finalResult;
     private List<BrowserMediaDevice> AudioInputDevices = new List<BrowserMediaDevice>();
     private List<string> sentences = new List<string>();
     private BufferPosition bufferPosition = BufferPosition.First;
     private HubConnection? hub;
-    private Channel<string> processSentences = Channel.CreateUnbounded<string>();
+    private Channel<string> sentencesQueue = Channel.CreateUnbounded<string>();
+    private Task sentenceProcessor = null!;
+
     public Task ReceiveResult(RegularResult message)
     {
-        processSentences.Writer.TryWrite(message.text);
+        sentencesQueue.Writer.TryWrite(message.text);
         sentences.Add(message.text);
         StateHasChanged();
         return Task.CompletedTask;
@@ -97,7 +91,8 @@
 
     public Task ReceiveFinalResult(FinalResult message)
     {
-        finalResult = message.text;
+        sentencesQueue.Writer.TryWrite(message.text);
+        sentences.Add(message.text);
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -118,26 +113,25 @@
     }
 
     [JSInvokable]
-    public async Task RecordingStopped()
+    public void RecordingStopped()
     {
         talkEnabled = false;
         StateHasChanged();
-        if (hub is not null)
-        {
-            await hub.DisposeAsync();
-            hub = null;
-        }
     }
 
     public async ValueTask DisposeAsync()
     {
+        sentencesQueue.Writer.TryComplete();
+        await sentenceProcessor;
         await module.DisposeAsync();
         thisJS.Dispose();
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         thisJS = DotNetObjectReference.Create(this);
+        sentenceProcessor = ProcessSentences();
+        await CheckConnection();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -158,11 +152,9 @@
             bytesRecorded = 0;
             sentences = new List<string>();
             fragment = null;
-            finalResult = null;
             chatResponse = string.Empty;
             StateHasChanged();
             bufferPosition = BufferPosition.First;
-            await CheckConnection();
             mimeType = await module.InvokeAsync<string>("startRecording", thisJS, selectedDeviceId);
             StateHasChanged();
         }
@@ -191,7 +183,7 @@
 
     private async Task ProcessSentences()
     {
-        await foreach (var sentence in processSentences.Reader.ReadAllAsync())
+        await foreach (var sentence in sentencesQueue.Reader.ReadAllAsync())
         {
             if (hub is not null)
             {
