@@ -18,9 +18,11 @@ namespace BlazorSamples.Shared
         private NamedPipeClientStream dotnetClientReadInFromFfmpegServerWriteOutPipe = null!;
         private Task ffmpegTask = null!;
         private Task dotnetTask = null!;
+        private CancellationToken ct = default;
 
-        public async Task InitializationAsync(Func<byte[], Task> processConvertedAudioBuffer)
+        public async Task InitializationAsync(Func<byte[], Task> processConvertedAudioBuffer, CancellationToken ct)
         {
+            this.ct = ct;
             await OpenPipes().ConfigureAwait(false);
             ffmpegTask = StartFFMpegProcess();
             dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe(processConvertedAudioBuffer);
@@ -43,10 +45,10 @@ namespace BlazorSamples.Shared
                 new NamedPipeServerStream(audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
             dotnetClientReadInFromFfmpegServerWriteOutPipe = new NamedPipeClientStream(".",
                 audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
-            var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync();
-            var ffmpegServerWriteOutPipeWaitForConnectionAsync = ffmpegServerWriteOutPipe.WaitForConnectionAsync();
-            await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync(),
-                dotnetClientReadInFromFfmpegServerWriteOutPipe.ConnectAsync()).ConfigureAwait(false);
+            var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync(ct);
+            var ffmpegServerWriteOutPipeWaitForConnectionAsync = ffmpegServerWriteOutPipe.WaitForConnectionAsync(ct);
+            await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync(ct),
+                dotnetClientReadInFromFfmpegServerWriteOutPipe.ConnectAsync(ct)).ConfigureAwait(false);
             await Task.WhenAll(dotnetServerWriteOutPipeWaitForConnectionAsync,
                 ffmpegServerWriteOutPipeWaitForConnectionAsync).ConfigureAwait(false);
         }
@@ -68,26 +70,31 @@ namespace BlazorSamples.Shared
         private Task StartFFMpegProcess() =>
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(ffmpegClientReadInFromDotnetServerWriteOutPipe), options => options
-                    .ForceFormat("mulaw"))
+                    .ForceFormat("mulaw")
+                    .UsingMultithreading(false)
+                    .WithHardwareAcceleration())
                 .OutputToPipe(new StreamPipeSink(ffmpegServerWriteOutPipe), options => options
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
                     .WithAudioBitrate(128)
                     .WithSpeedPreset(Speed.UltraFast)
+                    .WithFastStart()
+                    .UsingMultithreading(false)
                     .WithCustomArgument("-ac 1"))
-                .ProcessAsynchronously();
+                .ProcessAsynchronously(true);
 
         private async Task WriteToDotnetServerOutPipe(byte[] buffer)
         {
-            await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false);
         }
 
         private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(Func<byte[], Task> processConvertedAudioBuffer)
         {
             int bytesRead;
             var buffer = new byte[4096];
-            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
             {
+                ct.ThrowIfCancellationRequested();
                 await processConvertedAudioBuffer(buffer[..bytesRead]).ConfigureAwait(false);
             }
         }

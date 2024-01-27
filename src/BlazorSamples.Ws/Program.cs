@@ -105,20 +105,23 @@ static async Task ProcessTwilioInputAudio(
 {
     var buffer = new byte[1024 * 4];
     WebSocketReceiveResult receiveResult;
+    var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, appLifetime.ApplicationStopping);
     while (true)
     {
-        receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct).ConfigureAwait(false);
-
+        receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token).ConfigureAwait(false);
         if (receiveResult.CloseStatus.HasValue || appLifetime.ApplicationStopping.IsCancellationRequested)
+        {
+            cts.Cancel();
             break;
+        }
 
-        await ProcessReceivedMessage(buffer, receiveResult.Count, audioConverter, recognizer);
+        await ProcessReceivedMessage(buffer, receiveResult.Count, audioConverter, recognizer, cts.Token);
     }
 
-    await CloseWebSocketConnection(webSocket, appLifetime, receiveResult, ct).ConfigureAwait(false);
+    await CloseWebSocketConnection(webSocket, appLifetime, receiveResult, cts.Token).ConfigureAwait(false);
 }
 
-static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConverter audioConverter, ISpeechToTextProvider recognizer)
+static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConverter audioConverter, ISpeechToTextProvider recognizer, CancellationToken ct)
 {
     using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer.AsSpan(0, count))!;
     var eventMessage = jsonDocument.RootElement.GetProperty("event").GetString();
@@ -131,7 +134,7 @@ static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConvert
             HandleStartEvent(jsonDocument);
             break;
         case "media":
-            await ProcessMediaEvent(jsonDocument, audioConverter, recognizer);
+            await ProcessMediaEvent(jsonDocument, audioConverter, recognizer, ct);
             break;
         case "stop":
             Console.WriteLine("Event: stop");
@@ -145,13 +148,14 @@ static void HandleStartEvent(JsonDocument jsonDocument)
     Console.WriteLine($"StreamId: {streamSid}");
 }
 
-static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter, ISpeechToTextProvider recognizer)
+static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter, ISpeechToTextProvider recognizer, CancellationToken ct)
 {
     var payload = jsonDocument.RootElement.GetProperty("media").GetProperty("payload").GetString()!;
     byte[] data = Convert.FromBase64String(payload);
-    await audioConverter.InitializationAsync(async converted =>
+    await audioConverter.InitializationAsync(converted =>
     {
         Console.WriteLine($"Converted audio buffer size: {converted?.Length}");
+        return Task.CompletedTask;
         // var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
         // if (result.CompleteSentence is not null)
         // {
@@ -161,7 +165,7 @@ static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter a
         // {
         //     Console.WriteLine(result.SentenceFragment);
         // }
-    });
+    }, ct);
 
     await audioConverter.ProcessAudioBuffer(data);
     await audioConverter.ClosePipes();
