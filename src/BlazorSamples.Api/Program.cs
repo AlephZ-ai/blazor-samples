@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Http.Features;
 using System.Text;
 using System.Text.Json;
 using Aspire.Hosting.Utils;
+using BlazorSamples.Shared.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 var aiModel = "gpt-3.5-turbo-1106";

@@ -1,5 +1,4 @@
 using BlazorFileSaver;
-using BlazorSamples.Shared;
 using BlazorSamples.Web.Client.Pages;
 using BlazorSamples.Web.Components;
 using BlazorSamples.Web.Hubs;
@@ -8,6 +7,8 @@ using System.IO.Compression;
 using BlazorSamples.Web;
 using Whisper.net.Ggml;
 using Whisper.net;
+using BlazorSamples.Shared.Clients;
+using BlazorSamples.Shared.SpeechToText;
 
 Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
 var builder = WebApplication.CreateBuilder(args);

@@ -9,6 +9,8 @@ using FFMpegCore.Enums;
 using Vosk;
 using System.Text;
 using System.Text.Json;
+using BlazorSamples.Shared.Clients;
+using BlazorSamples.Shared.SpeechToText;
 
 namespace BlazorSamples.Web.Hubs
 {

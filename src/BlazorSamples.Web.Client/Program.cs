@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using BlazorSamples.Shared;
 using Microsoft.Extensions.Hosting;
 using KristofferStrube.Blazor.MediaCaptureStreams;
 using KristofferStrube.Blazor.WebIDL;
@@ -11,6 +10,7 @@ using Grpc.Net.Client.Web;
 using Grpc.Net.Client;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
+using BlazorSamples.Shared.Clients;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.Services.AddServiceDiscovery();

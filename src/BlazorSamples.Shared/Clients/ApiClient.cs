@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared
+namespace BlazorSamples.Shared.Clients
 {
     public sealed class ApiClient(HttpClient httpClient)
     {

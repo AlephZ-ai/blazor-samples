@@ -12,6 +12,7 @@ using Microsoft.SemanticKernel.SkillDefinition;
 using Microsoft.SemanticKernel.TemplateEngine.Prompt;
 using Microsoft.SemanticKernel.TemplateEngine;
 using Plugins;
+using BlazorSamples.Shared.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 var aiModel = "gpt-3.5-turbo-1106";

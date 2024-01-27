@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared
+namespace BlazorSamples.Shared.Clients
 {
     public sealed class LegacyApiClient(HttpClient httpClient)
     {

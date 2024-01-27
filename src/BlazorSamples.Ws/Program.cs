@@ -1,5 +1,4 @@
 using BlazorSamples.PlayHT.Protos.V1;
-using BlazorSamples.Shared;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -15,13 +14,15 @@ using Twilio.TwiML;
 using Twilio.AspNet.Common;
 using Twilio.AspNet.Core;
 using System.Text;
+using BlazorSamples.Shared.AudioConverter;
+using BlazorSamples.Shared.SpeechToText;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddHttpClient();
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.All);
 builder.AddAzureOpenAI("openai");
-builder.Services.AddScoped<IAudioConverter, AudioConverter>();
+builder.Services.AddScoped<IAudioConverter, FfmpegPipeAudioConverter>();
 bool isVosk = true;
 if (isVosk)
 {

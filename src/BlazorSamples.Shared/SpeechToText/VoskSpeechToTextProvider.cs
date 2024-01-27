@@ -1,11 +1,10 @@
-﻿using BlazorSamples.Shared;
-using System;
+﻿using System;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
 using Vosk;
 
-namespace BlazorSamples.Shared
+namespace BlazorSamples.Shared.SpeechToText
 {
     public sealed class VoskSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {

@@ -1,15 +1,13 @@
-﻿
-using BlazorSamples.Shared;
-using FFMpegCore;
+﻿using FFMpegCore;
 using FFMpegCore.Enums;
 using FFMpegCore.Pipes;
 using System.Collections;
 using System.IO.Pipes;
 using static Google.Protobuf.WireFormat;
 
-namespace BlazorSamples.Shared
+namespace BlazorSamples.Shared.AudioConverter
 {
-    public class AudioConverter : IAudioConverter
+    public class FfmpegPipeAudioConverter : IAudioConverter
     {
         private NamedPipeServerStream dotnetServerWriteOutPipe = null!;
         private NamedPipeClientStream ffmpegClientReadInFromDotnetServerWriteOutPipe = null!;
