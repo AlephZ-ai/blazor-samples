@@ -17,6 +17,7 @@ using System.Text;
 using BlazorSamples.Shared.AudioConverter;
 using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.TextToSpeech;
+using BlazorSamples.Shared.TextToText;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -25,6 +26,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => options.Forwarded
 builder.AddAzureOpenAI("openai");
 builder.Services.AddScoped<IAudioConverter, FfmpegPipeAudioConverter>();
 builder.Services.AddScoped<ITextToSpeech, PlayHTTextToSpeech>();
+builder.Services.AddScoped<ITextToText, OpenAITextToText>();
 bool isVosk = true;
 if (isVosk)
 {
@@ -50,7 +52,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
-var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
 app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
