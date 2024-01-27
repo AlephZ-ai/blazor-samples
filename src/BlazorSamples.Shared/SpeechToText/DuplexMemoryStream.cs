@@ -1,4 +1,4 @@
-﻿namespace BlazorSamples.Shared
+﻿namespace BlazorSamples.Shared.SpeechToText
 {
     public class DuplexMemoryStream : Stream
     {

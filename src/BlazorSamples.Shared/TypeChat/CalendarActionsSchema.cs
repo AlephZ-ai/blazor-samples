@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.TypeChat.Schema;
 
-namespace BlazorSamples.Shared
+namespace BlazorSamples.Shared.TypeChat
 {
     [Comment("The following types define the structure of an object of type CalendarActions that represents a list of requested calendar actions")]
     public class CalendarActions

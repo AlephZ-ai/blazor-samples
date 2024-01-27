@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
-using BlazorSamples.Shared;
 using Azure.AI.OpenAI;
 using Azure;
 using Microsoft.SemanticKernel;
@@ -31,6 +30,7 @@ using System.Text;
 using System.Text.Json;
 using Aspire.Hosting.Utils;
 using BlazorSamples.Shared.Clients;
+using BlazorSamples.Shared.TypeChat;
 
 var builder = WebApplication.CreateBuilder(args);
 var aiModel = "gpt-3.5-turbo-1106";

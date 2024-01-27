@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.WebAssembly.Http;
+﻿using BlazorSamples.Shared.TypeChat;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using BlazorSamples.Shared.Clients;
 using BlazorSamples.Shared.SpeechToText;
+using BlazorSamples.Shared.UI;
 
 namespace BlazorSamples.Web.Hubs
 {
