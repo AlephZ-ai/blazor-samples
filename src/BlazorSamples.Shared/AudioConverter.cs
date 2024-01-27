@@ -19,11 +19,11 @@ namespace BlazorSamples.Shared
         private Task ffmpegTask = null!;
         private Task dotnetTask = null!;
 
-        public async Task InitializationAsync()
+        public async Task InitializationAsync(Func<byte[], Task> processConvertedAudioBuffer)
         {
             await OpenPipes().ConfigureAwait(false);
             ffmpegTask = StartFFMpegProcess();
-            dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe();
+            dotnetTask = DotnetClientReadInFromFfmpegWriteServerOutPipe(processConvertedAudioBuffer);
         }
 
         public Task ProcessAudioBuffer(byte[] buffer)
@@ -82,7 +82,7 @@ namespace BlazorSamples.Shared
             await dotnetServerWriteOutPipe.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
         }
 
-        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe()
+        private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(Func<byte[], Task> processConvertedAudioBuffer)
         {
             int bytesRead;
             var buffer = new byte[4096];

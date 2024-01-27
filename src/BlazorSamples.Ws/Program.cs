@@ -149,7 +149,7 @@ static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter a
 {
     var payload = jsonDocument.RootElement.GetProperty("media").GetProperty("payload").GetString()!;
     byte[] data = Convert.FromBase64String(payload);
-    await audioConverter.InitializationAsync();
+    await audioConverter.InitializationAsync((b) => Task.FromResult(b));
     await audioConverter.ProcessAudioBuffer(data);
     // await foreach (var converted in audioConverter.ProcessAudioBuffer(data))
     // {
