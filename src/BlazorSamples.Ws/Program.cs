@@ -19,6 +19,7 @@ using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.TextToSpeech;
 using BlazorSamples.Shared.TextToText;
 using System.Diagnostics;
+using BlazorSamples.Shared.Twilio;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -115,6 +116,7 @@ static async Task ProcessTwilioInputAudio(
     var buffer = new byte[1024 * 4];
     WebSocketReceiveResult receiveResult;
     var cts = new CancellationTokenSource();
+    string? streamSid = null;
     await audioConverter.InitializationAsync(async converted =>
     {
         if (converted is not null && converted.Length > 0)
@@ -122,11 +124,22 @@ static async Task ProcessTwilioInputAudio(
             var result = await recognizer.AppendWavChunk(converted, converted.Length).ConfigureAwait(false)!;
             if (result is not null && !string.IsNullOrEmpty(result.CompleteSentence))
             {
-                await foreach(var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct).ConfigureAwait(false))
+                await foreach (var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                 {
                     await foreach (var responseAudioChunk in textToSpeech.Voice(responseSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                     {
+                        var audio = new AudioChunk
+                        {
+                            @event = "media",
+                            streamSid = streamSid!,
+                            media = new()
+                            {
+                                payload = Convert.ToBase64String(responseAudioChunk)
+                            }
+                        };
 
+                        var json = JsonSerializer.SerializeToUtf8Bytes(audio);
+                        await webSocket.SendAsync(json, WebSocketMessageType.Text, true, ct).ConfigureAwait(false);
                     }
                 }
             }
@@ -139,7 +152,7 @@ static async Task ProcessTwilioInputAudio(
         if (receiveResult.CloseStatus.HasValue || appLifetime.ApplicationStopping.IsCancellationRequested)
             break;
 
-        await ProcessReceivedMessage(buffer[..receiveResult.Count], audioConverter);
+        streamSid = await ProcessReceivedMessage(buffer[..receiveResult.Count], audioConverter, streamSid);
     }
 
     await audioConverter.ClosePipes().ConfigureAwait(false);
@@ -147,7 +160,7 @@ static async Task ProcessTwilioInputAudio(
     cts.Cancel();
 }
 
-static async Task ProcessReceivedMessage(byte[] buffer, IAudioConverter audioConverter)
+static async Task<string> ProcessReceivedMessage(byte[] buffer, IAudioConverter audioConverter, string? streamSid)
 {
     using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer)!;
     var eventMessage = jsonDocument.RootElement.GetProperty("event").GetString();
@@ -157,7 +170,7 @@ static async Task ProcessReceivedMessage(byte[] buffer, IAudioConverter audioCon
             Console.WriteLine("Event: connected");
             break;
         case "start":
-            HandleStartEvent(jsonDocument);
+            streamSid = HandleStartEvent(jsonDocument);
             break;
         case "media":
             await ProcessMediaEvent(jsonDocument, audioConverter);
@@ -166,12 +179,14 @@ static async Task ProcessReceivedMessage(byte[] buffer, IAudioConverter audioCon
             Console.WriteLine("Event: stop");
             break;
     }
+
+    return streamSid!;
 }
 
-static void HandleStartEvent(JsonDocument jsonDocument)
+static string HandleStartEvent(JsonDocument jsonDocument)
 {
-    var streamSid = jsonDocument.RootElement.GetProperty("streamSid").GetString();
-    Console.WriteLine($"StreamId: {streamSid}");
+    var streamSid = jsonDocument.RootElement.GetProperty("streamSid").GetString()!;
+    return streamSid;
 }
 
 static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter)
