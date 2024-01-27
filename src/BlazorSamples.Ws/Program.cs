@@ -119,12 +119,15 @@ static async Task ProcessTwilioInputAudio(
     {
         if (converted is not null && converted.Length > 0)
         {
-            var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
-            if (!string.IsNullOrEmpty(result.CompleteSentence))
+            var result = await recognizer.AppendWavChunk(converted, converted.Length).ConfigureAwait(false)!;
+            if (result is not null && !string.IsNullOrEmpty(result.CompleteSentence))
             {
-                await foreach(var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct))
+                await foreach(var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                 {
-                    textToSpeech.Voice(responseSentence, ct);
+                    await foreach (var responseAudioChunk in textToSpeech.Voice(responseSentence, ct).WithCancellation(ct).ConfigureAwait(false))
+                    {
+
+                    }
                 }
             }
         }

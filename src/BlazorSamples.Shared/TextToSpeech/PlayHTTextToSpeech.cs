@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using BlazorSamples.PlayHT.Protos.V1;
+using FFMpegCore.Pipes;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -35,6 +36,7 @@ namespace BlazorSamples.Shared.TextToSpeech
                     Text = { text },
                     Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
                     Format = Format.Mulaw,
+                    SampleRate = 8000,
                     Temperature = 1.5f,
                     Quality = Quality.Draft,
                     Speed = 1.2f
