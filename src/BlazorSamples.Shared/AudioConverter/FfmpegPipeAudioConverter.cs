@@ -75,7 +75,7 @@ namespace BlazorSamples.Shared.AudioConverter
                 .OutputToPipe(new StreamPipeSink(ffmpegServerWriteOutPipe), options => options
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
-                    .WithAudioBitrate(128)
+                    .WithAudioBitrate(64)
                     .UsingMultithreading(false)
                     .WithFastStart()
                     .WithSpeedPreset(Speed.UltraFast))

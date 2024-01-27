@@ -16,6 +16,7 @@ using Twilio.AspNet.Core;
 using System.Text;
 using BlazorSamples.Shared.AudioConverter;
 using BlazorSamples.Shared.SpeechToText;
+using BlazorSamples.Shared.TextToSpeech;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -23,16 +24,17 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.All);
 builder.AddAzureOpenAI("openai");
 builder.Services.AddScoped<IAudioConverter, FfmpegPipeAudioConverter>();
+builder.Services.AddScoped<ITextToSpeech, PlayHTTextToSpeech>();
 bool isVosk = true;
 if (isVosk)
 {
     await VoskSpeechToTextProvider.DownloadModelsAsync();
-    builder.Services.AddSingleton<ISpeechToTextProvider, VoskSpeechToTextProvider>();
+    builder.Services.AddScoped<ISpeechToTextProvider, VoskSpeechToTextProvider>();
 }
 else
 {
     await WhisperSpeechToTextProvider.DownloadModelsAsync();
-    builder.Services.AddSingleton<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
+    builder.Services.AddScoped<ISpeechToTextProvider, WhisperSpeechToTextProvider>();
 }
 
 builder.Services.AddCors(options =>
