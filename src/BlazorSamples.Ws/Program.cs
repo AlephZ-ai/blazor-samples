@@ -128,7 +128,7 @@ static async Task ProcessTwilioInputAudio(
         if (converted is not null && converted.Length > 0)
         {
             var result = await recognizer.AppendWavChunk(converted, converted.Length).ConfigureAwait(false)!;
-            if (result is not null && !string.IsNullOrEmpty(result.CompleteSentence))
+            if (!string.IsNullOrEmpty(result.CompleteSentence))
             {
                 await foreach (var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                 {
@@ -138,7 +138,6 @@ static async Task ProcessTwilioInputAudio(
                         {
                             var audio = new AudioChunk
                             {
-                                @event = "media",
                                 streamSid = streamSid!,
                                 media = new()
                                 {
@@ -155,6 +154,12 @@ static async Task ProcessTwilioInputAudio(
                         Console.WriteLine(ex);
                     }
                 }
+            }
+            else if (!string.IsNullOrEmpty(result.SentenceFragment))
+            {
+                var clear = new Clear { streamSid = streamSid! };
+                var json = JsonSerializer.SerializeToUtf8Bytes(clear);
+                await webSocket.SendAsync(json, WebSocketMessageType.Text, true, ct).ConfigureAwait(false);
             }
         }
     }, cts.Token);

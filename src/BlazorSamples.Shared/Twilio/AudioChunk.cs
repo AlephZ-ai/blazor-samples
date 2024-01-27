@@ -8,7 +8,7 @@ namespace BlazorSamples.Shared.Twilio
 {
     public class AudioChunk
     {
-        public required string @event { get; set; }
+        public string @event { get; } = "media";
         public required string streamSid { get; set; }
         public required Media media { get; set; }
     }

@@ -10,7 +10,6 @@ namespace BlazorSamples.Shared.SpeechToText
     {
         public const string Models = $"{ISpeechToTextProvider.Models}/vosk";
         public const string DefautModel = "vosk-model-en-us-0.22";
-        private static Task<AppendWavChunk> empty = Task.FromResult(new AppendWavChunk());
         //public const string DefautModel = "vosk-model-small-en-us-0.15";
         public const string DefautSpk = "vosk-model-spk-0.4";
         static VoskSpeechToTextProvider()
@@ -28,7 +27,6 @@ namespace BlazorSamples.Shared.SpeechToText
             _spk = new SpkModel($"{Models}/{DefautSpk}");
             _rec = new VoskRecognizer(_model, 16000.0f, _spk);
             _rec.SetMaxAlternatives(0);
-            _rec.SetPartialWords(false);
             _rec.SetWords(true);
         }
 
@@ -39,8 +37,11 @@ namespace BlazorSamples.Shared.SpeechToText
                 var result = JsonSerializer.Deserialize<RegularResult>(_rec.Result());
                 return Task.FromResult(new AppendWavChunk { CompleteSentence = result?.text });
             }
-
-            return empty;
+            else
+            {
+                var result = JsonSerializer.Deserialize<PartialResult>(_rec.PartialResult());
+                return Task.FromResult(new AppendWavChunk { SentenceFragment = result?.partial });
+            }
         }
 
         public string? FinalResult()

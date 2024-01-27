@@ -86,7 +86,7 @@ namespace BlazorSamples.Shared.AudioConverter
         private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(Func<byte[], Task> processConvertedAudioBuffer)
         {
             int bytesRead;
-            var buffer = new byte[32 * 1024];
+            var buffer = new byte[4 * 1024];
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
             {
                 await processConvertedAudioBuffer(buffer[..bytesRead]).ConfigureAwait(false);
