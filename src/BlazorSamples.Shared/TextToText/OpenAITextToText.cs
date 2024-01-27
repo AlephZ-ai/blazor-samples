@@ -28,11 +28,31 @@ namespace BlazorSamples.Shared.TextToText
                 }
             };
 
+            var sentence = string.Empty;
             var responseStream = await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, ct).ConfigureAwait(false);
             await foreach (var response in responseStream.WithCancellation(ct).ConfigureAwait(false))
             {
-                yield return response.ContentUpdate;
+                sentence += response?.ContentUpdate ?? string.Empty;
+                if (DetectSentence(ref sentence, out var leftOver))
+                {
+                    yield return sentence;
+                    sentence = leftOver;
+                }
             }
+        }
+
+        private bool DetectSentence(ref string sentence, out string leftOver)
+        {
+            if (sentence.Contains(".") || sentence.Contains("!") || sentence.Contains("?"))
+            {
+                var split = sentence.Split(new[] { '.', '!', '?' }, 2);
+                sentence = split[0];
+                leftOver = split[1] ?? string.Empty;
+                return true;
+            }
+
+            leftOver = string.Empty;
+            return false;
         }
     }
 }

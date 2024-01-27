@@ -132,20 +132,27 @@ static async Task ProcessTwilioInputAudio(
             {
                 await foreach (var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                 {
-                    await foreach (var responseAudioChunk in textToSpeech.Voice(responseSentence, ct).WithCancellation(ct).ConfigureAwait(false))
+                    try
                     {
-                        var audio = new AudioChunk
+                        await foreach (var responseAudioChunk in textToSpeech.Voice(responseSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                         {
-                            @event = "media",
-                            streamSid = streamSid!,
-                            media = new()
+                            var audio = new AudioChunk
                             {
-                                payload = Convert.ToBase64String(responseAudioChunk)
-                            }
-                        };
+                                @event = "media",
+                                streamSid = streamSid!,
+                                media = new()
+                                {
+                                    payload = Convert.ToBase64String(responseAudioChunk)
+                                }
+                            };
 
-                        var json = JsonSerializer.SerializeToUtf8Bytes(audio);
-                        await webSocket.SendAsync(json, WebSocketMessageType.Text, true, ct).ConfigureAwait(false);
+                            var json = JsonSerializer.SerializeToUtf8Bytes(audio);
+                            await webSocket.SendAsync(json, WebSocketMessageType.Text, true, ct).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
                     }
                 }
             }
