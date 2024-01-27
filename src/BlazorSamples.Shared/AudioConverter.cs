@@ -38,13 +38,13 @@ namespace BlazorSamples.Shared
             var audioWriteDotnetServerOutToFfmpegClientInPipe = Guid.NewGuid().ToString();
             var audioWriteFfmpegServerOutToDotnetClientInPipe = Guid.NewGuid().ToString();
             dotnetServerWriteOutPipe =
-                new NamedPipeServerStream(audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+                new NamedPipeServerStream(audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.Out, 1);
             ffmpegClientReadInFromDotnetServerWriteOutPipe = new NamedPipeClientStream(".",
-                audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+                audioWriteDotnetServerOutToFfmpegClientInPipe, PipeDirection.In);
             ffmpegServerWriteOutPipe =
-                new NamedPipeServerStream(audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+                new NamedPipeServerStream(audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.Out, 1);
             dotnetClientReadInFromFfmpegServerWriteOutPipe = new NamedPipeClientStream(".",
-                audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+                audioWriteFfmpegServerOutToDotnetClientInPipe, PipeDirection.In);
             var dotnetServerWriteOutPipeWaitForConnectionAsync = dotnetServerWriteOutPipe.WaitForConnectionAsync(ct);
             var ffmpegServerWriteOutPipeWaitForConnectionAsync = ffmpegServerWriteOutPipe.WaitForConnectionAsync(ct);
             await Task.WhenAll(ffmpegClientReadInFromDotnetServerWriteOutPipe.ConnectAsync(ct),
@@ -71,16 +71,16 @@ namespace BlazorSamples.Shared
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(ffmpegClientReadInFromDotnetServerWriteOutPipe), options => options
                     .ForceFormat("mulaw")
+                    .WithAudioSamplingRate(8000)
                     .UsingMultithreading(false)
                     .WithHardwareAcceleration())
                 .OutputToPipe(new StreamPipeSink(ffmpegServerWriteOutPipe), options => options
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
                     .WithAudioBitrate(128)
-                    .WithSpeedPreset(Speed.UltraFast)
-                    .WithFastStart()
                     .UsingMultithreading(false)
-                    .WithCustomArgument("-ac 1"))
+                    .WithFastStart()
+                    .WithSpeedPreset(Speed.UltraFast))
                 .ProcessAsynchronously(true);
 
         private async Task WriteToDotnetServerOutPipe(byte[] buffer)
@@ -91,10 +91,9 @@ namespace BlazorSamples.Shared
         private async Task DotnetClientReadInFromFfmpegWriteServerOutPipe(Func<byte[], Task> processConvertedAudioBuffer)
         {
             int bytesRead;
-            var buffer = new byte[4096];
+            var buffer = new byte[32 * 1024];
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
             {
-                ct.ThrowIfCancellationRequested();
                 await processConvertedAudioBuffer(buffer[..bytesRead]).ConfigureAwait(false);
             }
         }

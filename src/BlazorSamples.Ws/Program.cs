@@ -105,25 +105,42 @@ static async Task ProcessTwilioInputAudio(
 {
     var buffer = new byte[1024 * 4];
     WebSocketReceiveResult receiveResult;
-    var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, appLifetime.ApplicationStopping);
+    var cts = new CancellationTokenSource();
+    await audioConverter.InitializationAsync(async converted =>
+    {
+        if (converted is not null && converted.Length > 0)
+        {
+            var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
+            if (result.CompleteSentence is not null)
+            {
+                if (!string.IsNullOrEmpty(result.CompleteSentence))
+                    Console.WriteLine(result.CompleteSentence);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(result.SentenceFragment))
+                    Console.WriteLine(result.SentenceFragment);
+            }
+        }
+    }, cts.Token);
+
     while (true)
     {
-        receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token).ConfigureAwait(false);
+        receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), ct).ConfigureAwait(false);
         if (receiveResult.CloseStatus.HasValue || appLifetime.ApplicationStopping.IsCancellationRequested)
-        {
-            cts.Cancel();
             break;
-        }
 
-        await ProcessReceivedMessage(buffer, receiveResult.Count, audioConverter, recognizer, cts.Token);
+        await ProcessReceivedMessage(buffer[..receiveResult.Count], audioConverter);
     }
 
-    await CloseWebSocketConnection(webSocket, appLifetime, receiveResult, cts.Token).ConfigureAwait(false);
+    await audioConverter.ClosePipes().ConfigureAwait(false);
+    await CloseWebSocketConnection(webSocket, appLifetime, receiveResult).ConfigureAwait(false);
+    cts.Cancel();
 }
 
-static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConverter audioConverter, ISpeechToTextProvider recognizer, CancellationToken ct)
+static async Task ProcessReceivedMessage(byte[] buffer, IAudioConverter audioConverter)
 {
-    using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer.AsSpan(0, count))!;
+    using var jsonDocument = JsonSerializer.Deserialize<JsonDocument>(buffer)!;
     var eventMessage = jsonDocument.RootElement.GetProperty("event").GetString();
     switch (eventMessage)
     {
@@ -134,7 +151,7 @@ static async Task ProcessReceivedMessage(byte[] buffer, int count, IAudioConvert
             HandleStartEvent(jsonDocument);
             break;
         case "media":
-            await ProcessMediaEvent(jsonDocument, audioConverter, recognizer, ct);
+            await ProcessMediaEvent(jsonDocument, audioConverter);
             break;
         case "stop":
             Console.WriteLine("Event: stop");
@@ -148,37 +165,21 @@ static void HandleStartEvent(JsonDocument jsonDocument)
     Console.WriteLine($"StreamId: {streamSid}");
 }
 
-static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter, ISpeechToTextProvider recognizer, CancellationToken ct)
+static async Task ProcessMediaEvent(JsonDocument jsonDocument, IAudioConverter audioConverter)
 {
     var payload = jsonDocument.RootElement.GetProperty("media").GetProperty("payload").GetString()!;
     byte[] data = Convert.FromBase64String(payload);
-    await audioConverter.InitializationAsync(converted =>
-    {
-        Console.WriteLine($"Converted audio buffer size: {converted?.Length}");
-        return Task.CompletedTask;
-        // var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
-        // if (result.CompleteSentence is not null)
-        // {
-        //     Console.WriteLine(result.CompleteSentence);
-        // }
-        // else
-        // {
-        //     Console.WriteLine(result.SentenceFragment);
-        // }
-    }, ct);
-
     await audioConverter.ProcessAudioBuffer(data);
-    await audioConverter.ClosePipes();
 }
 
-static async Task CloseWebSocketConnection(WebSocket webSocket, IHostApplicationLifetime appLifetime, WebSocketReceiveResult receiveResult, CancellationToken ct)
+static async Task CloseWebSocketConnection(WebSocket webSocket, IHostApplicationLifetime appLifetime, WebSocketReceiveResult receiveResult)
 {
     if (receiveResult.CloseStatus.HasValue)
     {
-        await webSocket.CloseAsync(receiveResult.CloseStatus.Value, receiveResult.CloseStatusDescription, ct).ConfigureAwait(false);
+        await webSocket.CloseAsync(receiveResult.CloseStatus.Value, receiveResult.CloseStatusDescription, default).ConfigureAwait(false);
     }
     else if (appLifetime.ApplicationStopping.IsCancellationRequested)
     {
-        await webSocket.CloseAsync(WebSocketCloseStatus.EndpointUnavailable, "Server shutting down", ct).ConfigureAwait(false);
+        await webSocket.CloseAsync(WebSocketCloseStatus.EndpointUnavailable, "Server shutting down", default).ConfigureAwait(false);
     }
 }
