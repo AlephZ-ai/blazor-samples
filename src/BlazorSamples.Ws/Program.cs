@@ -54,6 +54,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
+app.Lifetime.ApplicationStopping.Register(OnShutdown);
 app.MapDefaultEndpoints();
 if (app.Environment.IsDevelopment())
 {
@@ -102,6 +103,11 @@ app.MapGet("/stream", async (
 });
 
 app.Run();
+
+void OnShutdown()
+{
+    PlayHTTextToSpeech.ShutdownChannel();
+}
 
 static async Task ProcessTwilioInputAudio(
     WebSocket webSocket,

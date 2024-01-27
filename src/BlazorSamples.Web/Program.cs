@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddSignalR();
 
-builder.Services.AddResponseCompression(opts => opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
+//builder.Services.AddResponseCompression(opts => opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -44,8 +44,6 @@ var app = builder.Build();
 
 
 
-
-var warmup = app.Services.GetRequiredService<ISpeechToTextProvider>();
 
 //app.UseResponseCompression();
 app.MapDefaultEndpoints();

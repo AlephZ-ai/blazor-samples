@@ -86,5 +86,10 @@ namespace BlazorSamples.Shared.TextToSpeech
             var client = new Tts.TtsClient(channel);
             return (client, channel, leaseByteString);
         }
+
+        public static void ShutdownChannel()
+        {
+            _channel?.Dispose();
+        }
     }
 }
