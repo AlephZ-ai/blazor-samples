@@ -8,5 +8,6 @@ namespace BlazorSamples.Shared.TextToSpeech
 {
     public interface ITextToSpeech
     {
+        IAsyncEnumerable<byte[]> Voice(string text, CancellationToken ct = default);
     }
 }

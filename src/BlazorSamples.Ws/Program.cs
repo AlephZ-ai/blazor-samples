@@ -18,6 +18,7 @@ using BlazorSamples.Shared.AudioConverter;
 using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.TextToSpeech;
 using BlazorSamples.Shared.TextToText;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -83,13 +84,15 @@ app.MapGet("/stream", async (
     IHostApplicationLifetime appLifetime,
     IAudioConverter audioConverter,
     ISpeechToTextProvider recognizer,
+    ITextToText textToText,
+    ITextToSpeech textToSpeech,
     CancellationToken ct
 ) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await ProcessTwilioInputAudio(webSocket, appLifetime, audioConverter, recognizer, ct).ConfigureAwait(false);
+        await ProcessTwilioInputAudio(webSocket, appLifetime, audioConverter, recognizer, textToText, textToSpeech, ct).ConfigureAwait(false);
     }
     else
     {
@@ -104,6 +107,8 @@ static async Task ProcessTwilioInputAudio(
     IHostApplicationLifetime appLifetime,
     IAudioConverter audioConverter,
     ISpeechToTextProvider recognizer,
+    ITextToText textToText,
+    ITextToSpeech textToSpeech,
     CancellationToken ct
 )
 {
@@ -115,15 +120,12 @@ static async Task ProcessTwilioInputAudio(
         if (converted is not null && converted.Length > 0)
         {
             var result = await recognizer.AppendWavChunk(converted, converted.Length)!;
-            if (result.CompleteSentence is not null)
+            if (!string.IsNullOrEmpty(result.CompleteSentence))
             {
-                if (!string.IsNullOrEmpty(result.CompleteSentence))
-                    Console.WriteLine(result.CompleteSentence);
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(result.SentenceFragment))
-                    Console.WriteLine(result.SentenceFragment);
+                await foreach(var responseSentence in textToText.StreamingResponse(result.CompleteSentence, ct).WithCancellation(ct))
+                {
+                    textToSpeech.Voice(responseSentence, ct);
+                }
             }
         }
     }, cts.Token);
