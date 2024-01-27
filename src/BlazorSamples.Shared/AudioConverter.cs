@@ -88,7 +88,7 @@ namespace BlazorSamples.Shared
             var buffer = new byte[4096];
             while ((bytesRead = await dotnetClientReadInFromFfmpegServerWriteOutPipe.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
-                Console.WriteLine($"DotnetClientReadInFromFfmpegWriteServerOutPipe: {bytesRead}");
+                await processConvertedAudioBuffer(buffer[..bytesRead]).ConfigureAwait(false);
             }
         }
     }
