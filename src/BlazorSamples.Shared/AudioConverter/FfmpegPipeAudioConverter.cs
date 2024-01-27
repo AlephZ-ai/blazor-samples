@@ -70,15 +70,14 @@ namespace BlazorSamples.Shared.AudioConverter
                 .FromPipeInput(new StreamPipeSource(ffmpegClientReadInFromDotnetServerWriteOutPipe), options => options
                     .ForceFormat("mulaw")
                     .WithAudioSamplingRate(8000)
-                    .UsingMultithreading(false)
+                    .UsingMultithreading(true)
                     .WithHardwareAcceleration())
                 .OutputToPipe(new StreamPipeSink(ffmpegServerWriteOutPipe), options => options
                     .ForceFormat("wav")
                     .WithAudioSamplingRate(16000)
                     .WithAudioBitrate(64)
-                    .UsingMultithreading(false)
-                    .WithFastStart()
-                    .WithSpeedPreset(Speed.UltraFast))
+                    .UsingMultithreading(true)
+                    .WithSpeedPreset(Speed.VerySlow))
                 .ProcessAsynchronously(true);
 
         private async Task WriteToDotnetServerOutPipe(byte[] buffer)

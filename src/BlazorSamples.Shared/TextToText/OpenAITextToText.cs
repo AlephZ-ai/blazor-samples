@@ -15,7 +15,7 @@ namespace BlazorSamples.Shared.TextToText
 {
     public class OpenAITextToText(OpenAIClient openAI) : ITextToText
     {
-        public const string AIModel = "gpt-3.5-turbo-1106";
+        public const string AIModel = "gpt-4-turbo-preview";
         public async IAsyncEnumerable<string> StreamingResponse(string query, [EnumeratorCancellation] CancellationToken ct = default)
         {
             var chatCompletionsOptions = new ChatCompletionsOptions()

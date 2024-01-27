@@ -38,7 +38,7 @@ namespace BlazorSamples.Shared.TextToSpeech
                     Format = Format.Mulaw,
                     SampleRate = 8000,
                     Temperature = 1.5f,
-                    Quality = Quality.Draft,
+                    Quality = Quality.Premium,
                     Speed = 1.2f
                 }
             };
