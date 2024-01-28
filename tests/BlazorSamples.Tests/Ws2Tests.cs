@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
+using System.Net.WebSockets;
+using System.Text;
 
 namespace BlazorSamples.Tests
 {
@@ -43,7 +46,33 @@ namespace BlazorSamples.Tests
         [TestMethod]
         public async Task Ws2Test()
         {
-            var webSocket = await _client.ConnectAsync(_uri, _context.CancellationTokenSource.Token);
+            var bufferSize = 1024 * 4;
+            var request = "Hello, WebSocket!";
+            var requestBuffer = new Memory<byte>(Encoding.UTF8.GetBytes(request));
+            var responseBuffer = new Memory<byte>(new byte[bufferSize]);
+            using var webSocket = await _client.ConnectAsync(_uri, _context.CancellationTokenSource.Token);
+            await webSocket.SendAsync(requestBuffer, WebSocketMessageType.Text, WebSocketMessageFlags.None, _context.CancellationTokenSource.Token);
+            var receiveResult = await webSocket.ReceiveAsync(responseBuffer, _context.CancellationTokenSource.Token);
+            var response = Encoding.UTF8.GetString(responseBuffer[..receiveResult.Count].ToArray());
+            Assert.AreEqual(request, response);
+
+            request = "Hello, WebSocket2!";
+            requestBuffer = new Memory<byte>(Encoding.UTF8.GetBytes(request));
+            responseBuffer = new Memory<byte>(new byte[bufferSize]);
+            await webSocket.SendAsync(requestBuffer, WebSocketMessageType.Text, WebSocketMessageFlags.None, _context.CancellationTokenSource.Token);
+            receiveResult = await webSocket.ReceiveAsync(responseBuffer, _context.CancellationTokenSource.Token);
+            response = Encoding.UTF8.GetString(responseBuffer[..receiveResult.Count].ToArray());
+            Assert.AreEqual(request, response);
+
+            request = "Hello, WebSocket3!";
+            requestBuffer = new Memory<byte>(Encoding.UTF8.GetBytes(request));
+            responseBuffer = new Memory<byte>(new byte[bufferSize]);
+            await webSocket.SendAsync(requestBuffer, WebSocketMessageType.Text, WebSocketMessageFlags.None, _context.CancellationTokenSource.Token);
+            receiveResult = await webSocket.ReceiveAsync(responseBuffer, _context.CancellationTokenSource.Token);
+            response = Encoding.UTF8.GetString(responseBuffer[..receiveResult.Count].ToArray());
+            Assert.AreEqual(request, response);
+
+            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", _context.CancellationTokenSource.Token);
         }
     }
 }

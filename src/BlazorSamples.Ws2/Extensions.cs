@@ -1,7 +1,9 @@
-﻿using System.Buffers;
+﻿using Google.Protobuf.WellKnownTypes;
+using System.Buffers;
 using System.Net.WebSockets;
+using System.Reactive;
 using System.Runtime.CompilerServices;
-using WebSocketAsyncEnumerableReceiveResult = (System.Net.WebSockets.ValueWebSocketReceiveResult Result, System.Memory<byte> Buffer);
+using WebSocketAsyncEnumerableReceiveResult = (System.Net.WebSockets.ValueWebSocketReceiveResult Result, System.ReadOnlyMemory<byte> Buffer);
 
 namespace BlazorSamples.Ws2
 {
@@ -13,6 +15,7 @@ namespace BlazorSamples.Ws2
             int bufferSize,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
+            if (webSocket.State != WebSocketState.Open) yield break;
             MemoryPool<byte> pool = MemoryPool<byte>.Shared;
             IMemoryOwner<byte> owner = pool.Rent(bufferSize);
             Memory<byte> buffer = owner.Memory;
@@ -37,22 +40,23 @@ namespace BlazorSamples.Ws2
             CancellationToken ct = default) =>
         webSocket.ReceiveAsyncEnumerable(DefaultBufferSize, ct);
 
-        public static async IAsyncEnumerable<ValueTask> SendAsyncEnumerable(
+        public static async IAsyncEnumerable<Unit> SendAsyncEnumerable(
             this WebSocket webSocket,
-            IAsyncEnumerable<Memory<byte>> enumerable,
+            IAsyncEnumerable<ReadOnlyMemory<byte>> enumerable,
             WebSocketMessageType messageType = WebSocketMessageType.Text,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
             await foreach (var buffer in enumerable.WithCancellation(ct).ConfigureAwait(false))
             {
                 if (webSocket.State != WebSocketState.Open) break;
-                yield return webSocket.SendAsync(buffer, messageType, false, ct);
+                await webSocket.SendAsync(buffer, messageType, WebSocketMessageFlags.None, ct);
+                yield return Unit.Default;
             }
         }
 
-        public static IAsyncEnumerable<ValueTask> SendAsyncEnumerable(
+        public static IAsyncEnumerable<Unit> SendAsyncEnumerable(
             this WebSocket webSocket,
-            IAsyncEnumerable<Memory<byte>> enumerable,
+            IAsyncEnumerable<ReadOnlyMemory<byte>> enumerable,
             CancellationToken ct = default) =>
         webSocket.SendAsyncEnumerable(enumerable, WebSocketMessageType.Text, ct);
     }
