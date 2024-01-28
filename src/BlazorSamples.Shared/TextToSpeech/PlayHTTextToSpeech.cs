@@ -34,11 +34,14 @@ namespace BlazorSamples.Shared.TextToSpeech
                 Params = new()
                 {
                     Text = { text },
-                    Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
+                    //Voice = "s3://peregrine-voices/oliver_narrative2_parrot_saad/manifest.json",
+                    //Voice = "s3://peregrine-voices/mel21/manifest.json",
+                    //Voice = "s3://voice-cloning-zero-shot/fd633950-d8be-4825-9d59-23d93c880d40/aaron2/manifest.json",
+                    Voice = "s3://mockingbird-prod/susan_vo_training_46ffcc60-d630-42f6-acfe-4affd003ae7a/voices/speaker/manifest.json",
                     Format = Format.Mulaw,
                     SampleRate = 8000,
                     Temperature = 1.5f,
-                    Quality = Quality.High,
+                    Quality = Quality.Medium,
                     Speed = 1.2f
                 }
             };
