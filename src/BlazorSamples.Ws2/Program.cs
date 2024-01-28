@@ -31,8 +31,6 @@ app.UseForwardedHeaders();
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => "Hello World!");
-app.Run();
-
 app.MapGet("/stream", async (
     HttpContext context,
     CancellationToken ct
@@ -41,7 +39,7 @@ app.MapGet("/stream", async (
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        await Echo(webSocket, ct);
+        await Echo2(webSocket, ct);
     }
     else
     {
@@ -51,9 +49,41 @@ app.MapGet("/stream", async (
 .WithName("Stream")
 .RequireCors();
 
+
+
+
+app.Run();
+
+
+
+
 static async Task Echo(WebSocket webSocket, CancellationToken ct = default)
 {
     var receiveLoop = webSocket.ReceiveAsyncEnumerable(1024 * 4, ct).Select(r => r.Buffer);
     await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct).LastAsync().ConfigureAwait(false);
     await webSocket.CloseAsync(webSocket.CloseStatus!.Value, webSocket.CloseStatusDescription, ct);
+}
+
+static async Task Echo2(WebSocket webSocket, CancellationToken ct)
+{
+    var buffer = new byte[1024 * 4];
+    var receiveResult = await webSocket.ReceiveAsync(
+        new ArraySegment<byte>(buffer), ct);
+
+    while (!receiveResult.CloseStatus.HasValue)
+    {
+        await webSocket.SendAsync(
+            new ArraySegment<byte>(buffer, 0, receiveResult.Count),
+            receiveResult.MessageType,
+            receiveResult.EndOfMessage,
+            ct);
+
+        receiveResult = await webSocket.ReceiveAsync(
+            new ArraySegment<byte>(buffer), ct);
+    }
+
+    await webSocket.CloseAsync(
+        receiveResult.CloseStatus.Value,
+        receiveResult.CloseStatusDescription,
+        CancellationToken.None);
 }

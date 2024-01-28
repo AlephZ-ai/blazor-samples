@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -17,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlazorSamples.Tests" />
   </ItemGroup>
 
 </Project>
