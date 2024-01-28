@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Interactive" Version="6.0.1" />
+    <PackageReference Include="System.Interactive.Async" Version="6.0.1" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="System.Linq.Async.Queryable" Version="6.0.1" />
+    <PackageReference Include="System.Reactive" Version="6.0.1-preview.1" />
+    <PackageReference Include="System.Reactive.Async" Version="6.0.0-alpha.18" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BlazorSamples.ServiceDefaults\BlazorSamples.ServiceDefaults.csproj" />
   </ItemGroup>
 

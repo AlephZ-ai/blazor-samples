@@ -1,5 +1,7 @@
+using BlazorSamples.Ws2;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +41,7 @@ app.MapGet("/stream", async (
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        await Echo(webSocket);
+        await Echo(webSocket, ct);
     }
     else
     {
@@ -49,26 +51,9 @@ app.MapGet("/stream", async (
 .WithName("Stream")
 .RequireCors();
 
-static async Task Echo(WebSocket webSocket)
+static async Task Echo(WebSocket webSocket, CancellationToken ct = default)
 {
-    var buffer = new byte[1024 * 4];
-    var receiveResult = await webSocket.ReceiveAsync(
-        new ArraySegment<byte>(buffer), CancellationToken.None);
-
-    while (!receiveResult.CloseStatus.HasValue)
-    {
-        await webSocket.SendAsync(
-            new ArraySegment<byte>(buffer, 0, receiveResult.Count),
-            receiveResult.MessageType,
-            receiveResult.EndOfMessage,
-            CancellationToken.None);
-
-        receiveResult = await webSocket.ReceiveAsync(
-            new ArraySegment<byte>(buffer), CancellationToken.None);
-    }
-
-    await webSocket.CloseAsync(
-        receiveResult.CloseStatus.Value,
-        receiveResult.CloseStatusDescription,
-        CancellationToken.None);
+    var receiveLoop = webSocket.ReceiveAsyncEnumerable(1024 * 4, ct).Select(r => r.Buffer);
+    await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct).LastAsync().ConfigureAwait(false);
+    await webSocket.CloseAsync(webSocket.CloseStatus!.Value, webSocket.CloseStatusDescription, ct);
 }
