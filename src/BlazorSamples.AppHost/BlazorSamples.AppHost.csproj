@@ -19,6 +19,7 @@
     <ProjectReference Include="..\BlazorSamples.LegacyApi\BlazorSamples.LegacyApi.csproj" />
     <ProjectReference Include="..\BlazorSamples.Rpc\BlazorSamples.Rpc.csproj" />
     <ProjectReference Include="..\BlazorSamples.Web\BlazorSamples.Web.csproj" />
+    <ProjectReference Include="..\BlazorSamples.Ws2\BlazorSamples.Ws2.csproj" />
     <ProjectReference Include="..\BlazorSamples.Ws\BlazorSamples.Ws.csproj" />
   </ItemGroup>
 

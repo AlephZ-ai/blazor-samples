@@ -7,6 +7,9 @@ var rpc = builder.AddProject<Projects.BlazorSamples_Rpc>("rpc");
 builder.AddProject<Projects.BlazorSamples_Ws>("ws")
     .WithReference(openai);
 
+builder.AddProject<Projects.BlazorSamples_Ws2>("ws2")
+    .WithReference(openai);
+
 var api = builder.AddProject<Projects.BlazorSamples_Api>("api")
     .WithReference(openai);
 
