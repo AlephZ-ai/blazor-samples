@@ -37,8 +37,8 @@ app.MapGet("/stream", async (
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
-        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        await Echo(webSocket, ct);
+        using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
+        await Echo(webSocket, ct).ConfigureAwait(false);
     }
     else
     {
@@ -51,7 +51,7 @@ app.MapGet("/stream", async (
 
 
 
-app.Run();
+await app.RunAsync();
 
 
 
@@ -60,5 +60,5 @@ static async Task Echo(WebSocket webSocket, CancellationToken ct = default)
 {
     var receiveLoop = webSocket.ReceiveAsyncEnumerable(1024 * 4, ct).Select(r => r.Buffer);
     await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct).LastAsync(cancellationToken: ct).ConfigureAwait(false);
-    await webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct);
+    await webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct).ConfigureAwait(false);
 }

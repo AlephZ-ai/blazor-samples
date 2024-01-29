@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <StartupObject>BlazorSamples.Tests.TestWebSocketServer</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
