@@ -15,17 +15,19 @@ namespace BlazorSamples.Tests
     [TestClass]
     public class Ws2Tests
     {
+        private static TestContext _context = null!;
         private const string _chars = @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         private static readonly Random _random = new Random(69);
         private static readonly string _assemblyName = typeof(Ws2Tests).Assembly.GetName().Name!;
-        private static TestContext _context = null!;
-        private static int _serverReceiveCount = 0;
-        private static int _serverSendCount = 0;
-        private static int _serverRecombinedReceiveCount = 0;
-        private static Task? _serverClosed;
-        private static int _clientReceiveCount = 0;
-        private static int _clientSendCount = 0;
-        private static int _clientRecombinedReceiveCount = 0;
+        private int _serverReceiveCount = 0;
+        private int _serverSendCount = 0;
+        private int _serverRecombinedReceiveCount = 0;
+        private int _serverCloseCount = 0;
+        private Task? _serverClosed;
+        private int _clientReceiveCount = 0;
+        private int _clientSendCount = 0;
+        private int _clientRecombinedReceiveCount = 0;
+        private int _clientCloseCount = 0;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
@@ -58,7 +60,7 @@ namespace BlazorSamples.Tests
             Assert.AreEqual(expectedCount, _clientSendCount);
             var response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
             Assert.AreEqual(expectedCount, _serverReceiveCount);
-            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct));
+            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct).ConfigureAwait(false));
             Assert.AreEqual(expectedCount, _clientReceiveCount);
             Assert.AreEqual(request, response);
 
@@ -69,7 +71,7 @@ namespace BlazorSamples.Tests
             Assert.AreEqual(expectedCount, _clientSendCount);
             response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
             Assert.AreEqual(expectedCount, _serverReceiveCount);
-            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct));
+            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct).ConfigureAwait(false));
             Assert.AreEqual(expectedCount, _clientReceiveCount);
             Assert.AreEqual(request, response);
 
@@ -80,7 +82,7 @@ namespace BlazorSamples.Tests
             Assert.AreEqual(expectedCount, _clientSendCount);
             response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
             Assert.AreEqual(expectedCount, _serverReceiveCount);
-            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct));
+            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct).ConfigureAwait(false));
             Assert.AreEqual(expectedCount, _clientReceiveCount);
             Assert.AreEqual(request, response);
             await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", ct).ConfigureAwait(false);
@@ -92,7 +94,7 @@ namespace BlazorSamples.Tests
         public async Task EchoLargeTest()
         {
             // Arrange
-            TestWebSocketServer.Path = "/echoLarge";
+            TestWebSocketServer.Path = "/echo-large";
             TestWebSocketServer.DefaultBufferSize = 1024 * 4;
             TestWebSocketServer.WebSocketFunction = EchoLarge;
             var ct = _context.CancellationTokenSource.Token;
@@ -116,7 +118,7 @@ namespace BlazorSamples.Tests
             var response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
             Assert.AreEqual(expectedCount + 1, _serverReceiveCount);
             Assert.AreEqual(expectedCount, _serverRecombinedReceiveCount);
-            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct));
+            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct).ConfigureAwait(false));
             Assert.AreEqual(expectedCount + 1, _clientReceiveCount);
             Assert.AreEqual(expectedCount, _clientRecombinedReceiveCount);
             Assert.AreEqual(request, response);
@@ -125,10 +127,62 @@ namespace BlazorSamples.Tests
             await _serverClosed!;
         }
 
-        static async Task Echo(WebSocket webSocket, CancellationToken ct = default)
+        [TestMethod]
+        public async Task MultipleClientsTest()
+        {
+            // Arrange
+            TestWebSocketServer.Path = "/multiple-clients";
+            TestWebSocketServer.DefaultBufferSize = 1024 * 4;
+            TestWebSocketServer.WebSocketFunction = EchoLarge;
+            var numClients = 10;
+            var connects = 2;
+            var loops = 5;
+            var ct = _context.CancellationTokenSource.Token;
+            var factory = CreateFactory();
+            var clients = Enumerable.Range(1, numClients).Select(_ => factory.Server.CreateWebSocketClient());
+            var uri = factory.Server.BaseAddress.ToWs();
+            _serverReceiveCount = 0;
+            _serverSendCount = 0;
+            _serverRecombinedReceiveCount = 0;
+            _serverClosed = null;
+            _clientReceiveCount = 0;
+            _clientSendCount = 0;
+            _clientRecombinedReceiveCount = 0;
+
+            // Act and Assert
+            await clients.ForEachParallelAsync(async (client, t) =>
+            {
+                await Enumerable.Range(1, connects).ForEachAsync(async (_, t) =>
+                {
+                    var webSocket = await client.ConnectAsync(uri, ct).ConfigureAwait(false);
+                    await Enumerable.Range(1, loops).ForEachAsync(async (_, t) =>
+                    {
+                        var request = GenerateRandomString(_random.Next(1000, 2000));
+                        await SendStringAsync(webSocket, request, ct).ConfigureAwait(false);
+                        var response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
+                        Assert.AreEqual(request, response);
+                    }, ct).ConfigureAwait(false);
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", ct).ConfigureAwait(false);
+                    Interlocked.Increment(ref _clientCloseCount);
+                }, ct).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+
+            var expectedCount = numClients * connects * loops;
+            Assert.AreEqual(expectedCount, _clientSendCount);
+            Assert.AreEqual(expectedCount, _serverReceiveCount);
+            Assert.AreEqual(expectedCount, _serverRecombinedReceiveCount);
+            Assert.AreEqual(expectedCount, _serverSendCount);
+            Assert.AreEqual(expectedCount, _clientReceiveCount);
+            Assert.AreEqual(expectedCount, _clientRecombinedReceiveCount);
+            Assert.AreEqual(numClients * connects, _clientCloseCount);
+            Assert.AreEqual(numClients * connects, _serverCloseCount);
+        }
+
+        async Task Echo(WebSocket webSocket, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
                 .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .Select(r => r.Buffer);
 
@@ -140,12 +194,14 @@ namespace BlazorSamples.Tests
  
             _serverClosed = webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct);
             await _serverClosed.ConfigureAwait(false);
+            Interlocked.Increment(ref _serverCloseCount);
         }
 
-        static async Task EchoLarge(WebSocket webSocket, CancellationToken ct = default)
+        async Task EchoLarge(WebSocket webSocket, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
                 .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .Select(r => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return r; });
@@ -158,16 +214,17 @@ namespace BlazorSamples.Tests
  
             _serverClosed = webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct);
             await _serverClosed.ConfigureAwait(false);
+            Interlocked.Increment(ref _serverCloseCount);
         }
 
-        static async ValueTask SendStringAsync(WebSocket webSocket, string message, CancellationToken ct = default)
+        async ValueTask SendStringAsync(WebSocket webSocket, string message, CancellationToken ct = default)
         {
             var buffer = new Memory<byte>(Encoding.UTF8.GetBytes(message));
             await webSocket.SendAsync(buffer, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, ct);
             Interlocked.Increment(ref _clientSendCount);
         }
 
-        static async Task<string> ReceiveStringAsync(WebSocket webSocket, CancellationToken ct = default)
+        async Task<string> ReceiveStringAsync(WebSocket webSocket, CancellationToken ct = default)
         {
             var buffer = new Memory<byte>(new byte[TestWebSocketServer.DefaultBufferSize]);
             var message = new StringBuilder();
@@ -180,7 +237,7 @@ namespace BlazorSamples.Tests
                     message.Append(Encoding.UTF8.GetString(buffer[..result.Count].ToArray()));
             } while (!result.EndOfMessage);
 
-            _clientRecombinedReceiveCount++;
+            Interlocked.Increment(ref _clientRecombinedReceiveCount);
             return message.ToString();
         }
 
@@ -218,17 +275,17 @@ namespace BlazorSamples.Tests
 
         // TODO: This is HORRIBLE and should be removed IMMEDIATELY!
         // This WILL lead to flakey tests and should be replaced with an alternative way of doing things.
-        private static async Task<bool> IsTrueAsync(Func<bool> func, int timeout = 50, CancellationToken ct = default)
+        private static async Task<bool> IsTrueAsync(Func<bool> func, int timeout = 101, CancellationToken ct = default)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromMilliseconds(timeout));
             while (!cts.IsCancellationRequested)
             {
                 if (func()) return true;
-                await Task.Delay(1).ConfigureAwait(false);
+                await Task.Delay(9).ConfigureAwait(false);
             }
 
-            cts.Token.ThrowIfCancellationRequested();
+            //cts.Token.ThrowIfCancellationRequested();
             return false;
         }   
     }

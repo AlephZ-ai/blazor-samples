@@ -16,5 +16,20 @@ namespace BlazorSamples.Tests
             uriBuilder.Path = path;
             return uriBuilder.Uri;
         }
+
+        public static Task ForEachParallelAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task> body, CancellationToken ct)
+        {
+            var tasks = source.Select(item => body(item, ct));
+            return Task.WhenAll(tasks);
+        }
+
+        public static async Task ForEachAsync<T>(this IEnumerable<T> source, Func<T, CancellationToken, Task> body, CancellationToken ct)
+        {
+            var tasks = source.Select(async item => await body(item, ct));
+            foreach (var task in tasks)
+            {
+                await task.ConfigureAwait(false);
+            }
+        }
     }
 }
