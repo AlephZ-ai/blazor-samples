@@ -76,6 +76,7 @@ namespace BlazorSamples.Ws2
         {
             // TODO: This is a naive implementation that will allocate a new buffer for each message.
             // Only allocate a new buffer when the message is larger than the current buffer.
+            // Set a maximum buffer size and throw an exception if the message is larger than the maximum to avoid a DOS attack.
             MemoryPool<byte> pool = MemoryPool<byte>.Shared;
             IMemoryOwner<byte> owner = pool.Rent(initialBufferSize);
             Memory<byte> buffer = owner.Memory;
