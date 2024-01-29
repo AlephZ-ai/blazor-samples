@@ -25,18 +25,7 @@ namespace BlazorSamples.Tests
 
         public static async Task MainAsync(string[] args)
         {
-            WebApplicationBuilder? builder;
-            try
-            {
-                builder = WebApplication.CreateBuilder(args);
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
-
+            var builder = WebApplication.CreateBuilder(args);
             App = builder.Build();
             App.UseWebSockets();
             App.MapGet(Path, async (

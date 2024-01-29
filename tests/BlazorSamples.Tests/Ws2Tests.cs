@@ -32,18 +32,8 @@ namespace BlazorSamples.Tests
             TestWebSocketServer.DefaultBufferSize = 1024 * 4;
             TestWebSocketServer.WebSocketFunction = Echo;
             var ct = _context.CancellationTokenSource.Token;
-            WebSocketClient? client = null;
             var factory = CreateFactory();
-            try
-            {
-                client = factory.Server.CreateWebSocketClient();
-            }
-            catch (Exception ex)
-            {
-                _context.WriteLine(ex.Message);
-                throw;
-            }
-
+            var client = factory.Server.CreateWebSocketClient();
             var uri = factory.Server.BaseAddress.ToWs();
 
             // Act
