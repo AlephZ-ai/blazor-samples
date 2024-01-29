@@ -11,9 +11,9 @@ using WebSocketAsyncEnumerableSendMessage = (System.Net.WebSockets.WebSocketMess
 
 namespace BlazorSamples.Ws2
 {
-    public static class Extensions
+    public static class WebSocketExtensions
     {
-        public const int DefaultBufferSize = 4 * 1024;
+        public const int DefaultBufferSize = AsyncEnumerableExtensions.DefaultBufferSize;
         public static async IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReceiveAsyncEnumerable(
             this WebSocket webSocket,
             int bufferSize = DefaultBufferSize,
@@ -85,7 +85,7 @@ namespace BlazorSamples.Ws2
             {
                 await foreach (var message in enumerable.WithCancellation(ct).ConfigureAwait(false))
                 {
-                    ResizeBufferIfNeeded(pool, ref owner, ref buffer, offset, message);
+                    AsyncEnumerableExtensions.ResizeBufferIfNeeded(pool, ref owner, ref buffer, offset, message.Buffer.Length);
                     message.Buffer.CopyTo(buffer[offset..]);
                     offset += message.Buffer.Length;
                     if (message.Result.EndOfMessage)
@@ -98,21 +98,6 @@ namespace BlazorSamples.Ws2
             finally
             {
                 owner.Dispose();
-            }
-        }
-
-        private static void ResizeBufferIfNeeded(MemoryPool<byte> pool, ref IMemoryOwner<byte> owner, ref Memory<byte> buffer, int offset, WebSocketAsyncEnumerableReceiveMessage message)
-        {
-            var combinedSize = offset + message.Buffer.Length;
-            if (combinedSize > buffer.Length)
-            {
-                var newSize = buffer.Length;
-                while (newSize < combinedSize) newSize *= 2;
-                var newBuffer = pool.Rent(newSize);
-                buffer.CopyTo(newBuffer.Memory);
-                buffer = newBuffer.Memory;
-                owner.Dispose();
-                owner = newBuffer;
             }
         }
     }

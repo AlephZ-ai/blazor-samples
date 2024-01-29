@@ -9,6 +9,7 @@ using System.Net.NetworkInformation;
 using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 namespace BlazorSamples.Tests
 {
@@ -36,7 +37,7 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public async Task EchoTest()
+        public async Task EchoShortTest()
         {
             // Arrange
             TestWebSocketServer.Path = "/echo";
@@ -91,7 +92,7 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public async Task EchoLargeTest()
+        public async Task EchoLongTest()
         {
             // Arrange
             TestWebSocketServer.Path = "/echo-large";
@@ -128,13 +129,50 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public async Task MultipleClientsTest()
+        public async Task JsonTest()
+        {
+            // Arrange
+            TestWebSocketServer.Path = "/json";
+            TestWebSocketServer.DefaultBufferSize = 1024 * 4;
+            TestWebSocketServer.WebSocketFunction = Json;
+            var ct = _context.CancellationTokenSource.Token;
+            var factory = CreateFactory();
+            var client = factory.Server.CreateWebSocketClient();
+            var uri = factory.Server.BaseAddress.ToWs();
+            _serverReceiveCount = 0;
+            _serverSendCount = 0;
+            _serverRecombinedReceiveCount = 0;
+            _serverClosed = null;
+            _clientReceiveCount = 0;
+            _clientSendCount = 0;
+            _clientRecombinedReceiveCount = 0;
+
+            // Act and Assert
+            var expectedCount = 1;
+            var webSocket = await client.ConnectAsync(uri, ct).ConfigureAwait(false);
+            var request = new JsonTest { Message = GenerateRandomString(5000) };
+            await SendJsonAsync(webSocket, request, ct).ConfigureAwait(false);
+            Assert.AreEqual(expectedCount, _clientSendCount);
+            var response = await ReceiveJsonAsync<JsonTest>(webSocket, ct).ConfigureAwait(false);
+            Assert.AreEqual(expectedCount + 1, _serverReceiveCount);
+            Assert.AreEqual(expectedCount, _serverRecombinedReceiveCount);
+            Assert.IsTrue(await IsTrueAsync(() => expectedCount == _serverSendCount, ct: ct).ConfigureAwait(false));
+            Assert.AreEqual(expectedCount + 1, _clientReceiveCount);
+            Assert.AreEqual(expectedCount, _clientRecombinedReceiveCount);
+            Assert.AreEqual(request.Message, response!.Message);
+            await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", ct).ConfigureAwait(false);
+            Assert.IsTrue(await IsTrueAsync(() => _serverClosed != null, ct: ct));
+            await _serverClosed!;
+        }
+
+        [TestMethod]
+        public async Task MultipleClientsJsonTest()
         {
             // Arrange
             TestWebSocketServer.Path = "/multiple-clients";
             TestWebSocketServer.DefaultBufferSize = 1024 * 4;
-            TestWebSocketServer.WebSocketFunction = EchoLarge;
-            var numClients = 101;
+            TestWebSocketServer.WebSocketFunction = Json;
+            var numClients = 11;
             var connects = 22;
             var loops = 55;
             var ct = _context.CancellationTokenSource.Token;
@@ -157,10 +195,10 @@ namespace BlazorSamples.Tests
                     var webSocket = await client.ConnectAsync(uri, ct).ConfigureAwait(false);
                     await Enumerable.Range(1, loops).ForEachAsync(async (_, t) =>
                     {
-                        var request = GenerateRandomString(_random.Next(1000, 2000));
-                        await SendStringAsync(webSocket, request, ct).ConfigureAwait(false);
-                        var response = await ReceiveStringAsync(webSocket, ct).ConfigureAwait(false);
-                        Assert.AreEqual(request, response);
+                        var request = new JsonTest { Message = GenerateRandomString(_random.Next(1000, 3000)) };
+                        await SendJsonAsync(webSocket, request, ct).ConfigureAwait(false);
+                        var response = await ReceiveJsonAsync<JsonTest>(webSocket, ct).ConfigureAwait(false);
+                        Assert.AreEqual(request.Message, response.Message);
                     }, ct).ConfigureAwait(false);
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", ct).ConfigureAwait(false);
                     Interlocked.Increment(ref _clientCloseCount);
@@ -211,6 +249,34 @@ namespace BlazorSamples.Tests
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);
+
+            _serverClosed = webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct);
+            await _serverClosed.ConfigureAwait(false);
+            Interlocked.Increment(ref _serverCloseCount);
+        }
+
+        async Task Json(WebSocket webSocket, CancellationToken ct = default)
+        {
+            var receiveLoop = webSocket
+                .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
+                .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
+                .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .ExcludeEmpty()
+                .ToTFromJsonAsyncEnumerable<JsonTest>()
+                .ToJsonBytesAsyncEnumerable()
+                .ToStringAsyncEnumerable()
+                .ToBytesAsyncEnumerable()
+                .ToTFromJsonAsyncEnumerable<JsonTest>()
+                .ToJsonStringAsyncEnumerable()
+                .Select(s => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return s; })
+                .ToBytesAsyncEnumerable();
+
+            await webSocket
+                .SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
+                .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
+                .LastAsync(cancellationToken: ct)
+                .ConfigureAwait(false);
  
             _serverClosed = webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct);
             await _serverClosed.ConfigureAwait(false);
@@ -220,6 +286,13 @@ namespace BlazorSamples.Tests
         async ValueTask SendStringAsync(WebSocket webSocket, string message, CancellationToken ct = default)
         {
             var buffer = new Memory<byte>(Encoding.UTF8.GetBytes(message));
+            await webSocket.SendAsync(buffer, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, ct);
+            Interlocked.Increment(ref _clientSendCount);
+        }
+
+        async ValueTask SendJsonAsync<T>(WebSocket webSocket, T message, CancellationToken ct = default)
+        {
+            var buffer = new Memory<byte>(JsonSerializer.SerializeToUtf8Bytes(message));
             await webSocket.SendAsync(buffer, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, ct);
             Interlocked.Increment(ref _clientSendCount);
         }
@@ -239,6 +312,23 @@ namespace BlazorSamples.Tests
 
             Interlocked.Increment(ref _clientRecombinedReceiveCount);
             return message.ToString();
+        }
+
+        async Task<T?> ReceiveJsonAsync<T>(WebSocket webSocket, CancellationToken ct = default)
+        {
+            var buffer = new Memory<byte>(new byte[TestWebSocketServer.DefaultBufferSize]);
+            var message = new StringBuilder();
+            ValueWebSocketReceiveResult result;
+            do
+            {
+                result = await webSocket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
+                Interlocked.Increment(ref _clientReceiveCount);
+                if (result.Count > 0)
+                    message.Append(Encoding.UTF8.GetString(buffer[..result.Count].ToArray()));
+            } while (!result.EndOfMessage);
+
+            Interlocked.Increment(ref _clientRecombinedReceiveCount);
+            return JsonSerializer.Deserialize<T>(message.ToString());
         }
 
         private static WebApplicationFactory<TestWebSocketServer> CreateFactory()
@@ -288,5 +378,10 @@ namespace BlazorSamples.Tests
             //cts.Token.ThrowIfCancellationRequested();
             return false;
         }   
+    }
+
+    public class JsonTest
+    {
+        public required string Message { get; set; }
     }
 }
