@@ -134,9 +134,9 @@ namespace BlazorSamples.Tests
             TestWebSocketServer.Path = "/multiple-clients";
             TestWebSocketServer.DefaultBufferSize = 1024 * 4;
             TestWebSocketServer.WebSocketFunction = EchoLarge;
-            var numClients = 10;
-            var connects = 2;
-            var loops = 5;
+            var numClients = 101;
+            var connects = 22;
+            var loops = 55;
             var ct = _context.CancellationTokenSource.Token;
             var factory = CreateFactory();
             var clients = Enumerable.Range(1, numClients).Select(_ => factory.Server.CreateWebSocketClient());
