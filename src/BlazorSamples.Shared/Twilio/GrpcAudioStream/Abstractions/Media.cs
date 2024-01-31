@@ -16,6 +16,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 
         [Required(AllowEmptyStrings = false)]
         [JsonPropertyName(PAYLOAD)]
-        public required byte[] Payload { get; init; }
+        public required ReadOnlyMemory<byte> Payload { get; init; }
     }
 }
