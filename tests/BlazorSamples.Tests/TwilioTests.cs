@@ -19,6 +19,7 @@ namespace BlazorSamples.Tests
     [TestClass]
     public class TwilioTests
     {
+        private static readonly string _base = "twilio";
         private static TestContext _context = null!;
     
         [ClassInitialize]
@@ -28,15 +29,10 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public void StrongJsonTest()
+        public async Task StrongJsonTest()
         {
             var rand = new Random(777);
-            var inConnected = JsonTest(new InboundConnectedEvent
-            {
-                Protocol = "Call",
-                Version = "1.0.0",
-            });
-
+            var inConnected = JsonTest(await GetFromFile<InboundConnectedEvent>("inbound-connected.json"));
             inConnected = PolymorphismTest<InboundConnectedEvent>(inConnected);
             Assert.AreEqual("connected", inConnected.EventType);
             Assert.AreEqual(EventDirection.Inbound, inConnected.Direction);
@@ -62,119 +58,54 @@ namespace BlazorSamples.Tests
             Assert.AreEqual(8000, inStart.Start.MediaFormat.SampleRate);
             Assert.AreEqual(1, inStart.Start.MediaFormat.Channels);
 
-            inStart = JsonTest(new InboundStartEvent
-            {
-                SequenceNumber = 420,
-                StreamSid = streamSid,
-                Start = new()
-                {
-                    StreamSid = streamSid,
-                    AccountSid = Guid.NewGuid().ToString(),
-                    CallSid = Guid.NewGuid().ToString(),
-                    Tracks = [ "inbound", "outbound" ],
-                    CustomParameters = new(),
-                    MediaFormat = new()
-                    {
-                        Encoding = "Encoding",
-                        SampleRate = 317,
-                        Channels = 13,
-                    },
-                },
-            });
-
+            inStart = JsonTest(await GetFromFile<InboundStartEvent>("inbound-start.json"));
             inStart = PolymorphismTest<InboundStartEvent>(inStart);
             Assert.AreEqual("start", inStart.EventType);
             Assert.AreEqual(EventDirection.Inbound, inStart.Direction);
 
 
-            var inMedia = JsonTest(new InboundMediaEvent
-            {
-                SequenceNumber = 69,
-                StreamSid = Guid.NewGuid().ToString(),
-                Media = new()
-                {
-                    Chunk = 42,
-                    Timestamp = 1000,
-                    Track = "inbound",
-                    Payload = [ 0x00, 0x01, 0x02, 0x03 ],
-                },
-            });
-
+            var inMedia = JsonTest(await GetFromFile<InboundMediaEvent>("inbound-media-in-track.json"));
+            inMedia = PolymorphismTest<InboundMediaEvent>(inMedia);
+            Assert.AreEqual("media", inMedia.EventType);
+            Assert.AreEqual(EventDirection.Inbound, inMedia.Direction);
+            inMedia = JsonTest(await GetFromFile<InboundMediaEvent>("inbound-media-out-track.json"));
             inMedia = PolymorphismTest<InboundMediaEvent>(inMedia);
             Assert.AreEqual("media", inMedia.EventType);
             Assert.AreEqual(EventDirection.Inbound, inMedia.Direction);
 
 
-            var inStop = JsonTest(new InboundStopEvent
-            {
-                SequenceNumber = (uint)rand.Next(),
-                StreamSid = Guid.NewGuid().ToString(),
-                Stop = new()
-                {
-                    AccountSid = Guid.NewGuid().ToString(),
-                    CallSid = Guid.NewGuid().ToString(),
-                },
-            });
-
+            var inStop = JsonTest(await GetFromFile<InboundStopEvent>("inbound-stop.json"));
             inStop = PolymorphismTest<InboundStopEvent>(inStop);
             Assert.AreEqual("stop", inStop.EventType);
             Assert.AreEqual(EventDirection.Inbound, inStop.Direction);
 
 
-            var inMark = JsonTest(new InboundMarkEvent
-            {
-                SequenceNumber = (uint)rand.Next(),
-                Mark = new()
-                {
-                    Name = "Mark",
-                },
-            });
-
+            var inMark = JsonTest(await GetFromFile<InboundMarkEvent>("inbound-mark.json"));
             inMark = PolymorphismTest<InboundMarkEvent>(inMark);
             Assert.AreEqual("mark", inMark.EventType);
             Assert.AreEqual(EventDirection.Inbound, inMark.Direction);
 
 
-            var outMedia = JsonTest(new OutboundMediaEvent
-            {
-                StreamSid = Guid.NewGuid().ToString(),
-                Media = new()
-                {
-                    Payload = [ 0x03, 0x02, 0x01, 0x00 ],
-                },
-            });
-
+            var outMedia = JsonTest(await GetFromFile<OutboundMediaEvent>("outbound-media.json"));
             outMedia = PolymorphismTest<OutboundMediaEvent>(outMedia);
             Assert.AreEqual("media", outMedia.EventType);
             Assert.AreEqual(EventDirection.Outbound, outMedia.Direction);
 
 
-            var outMark = JsonTest(new OutboundMarkEvent
-            {
-                StreamSid = Guid.NewGuid().ToString(),
-                Mark = new()
-                {
-                    Name = "Rubio",
-                },
-            });
-
+            var outMark = JsonTest(await GetFromFile<OutboundMarkEvent>("outbound-mark.json"));
             outMark = PolymorphismTest<OutboundMarkEvent>(outMark);
             Assert.AreEqual("mark", outMark.EventType);
             Assert.AreEqual(EventDirection.Outbound, outMark.Direction);
 
 
-            var outClear = JsonTest(new OutboundClearEvent
-            {
-                StreamSid = Guid.NewGuid().ToString(),
-            });
-
+            var outClear = JsonTest(await GetFromFile<OutboundClearEvent>("outbound-clear.json"));
             outClear = PolymorphismTest<OutboundClearEvent>(outClear);
             Assert.AreEqual("clear", outClear.EventType);
             Assert.AreEqual(EventDirection.Outbound, outClear.Direction);
         }
 
         T JsonTest<T>(T input)
-            where T : IEvent
+            where T : Event
         {
             var json = JsonSerializer.Serialize(input);
             var output = JsonSerializer.Deserialize<T>(json);
@@ -196,6 +127,13 @@ namespace BlazorSamples.Tests
             var output = JsonSerializer.Deserialize<IOutboundEvent>(json);
             input.ShouldCompare(output);
             return (T)output!;
+        }
+
+        async Task<T> GetFromFile<T>(string file)
+        {
+            await using var stream = File.OpenRead($"{_base}/{file}");
+            var obj = await JsonSerializer.DeserializeAsync<T>(stream);
+            return obj!;
         }
     }
 }

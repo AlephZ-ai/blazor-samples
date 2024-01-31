@@ -10,19 +10,19 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
 {
-    public record struct InboundStartEvent : IInboundEvent, ISequenceEvent, IStreamSidEvent
+    public class InboundStartEvent : SequenceEvent, IInboundEvent
     {
         public const string EVENT_TYPE = "start";
         public const string START = EVENT_TYPE;
-
-        public string EventType => EVENT_TYPE;
-        public EventDirection Direction => EventDirection.Inbound;
-        public required uint SequenceNumber { get; init; }
-        public required string StreamSid { get; init; }
 
         [Required]
         [JsonPropertyOrder(101)]
         [JsonPropertyName(START)]
         public required InboundStart Start { get; init; }
+        public InboundStartEvent()
+        {
+            EventType = EVENT_TYPE;
+            Direction = EventDirection.Inbound;
+        }
     }
 }

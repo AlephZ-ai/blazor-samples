@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BlazorSamples.Shared.Twilio.GrpcAudioStream.Converters;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -8,13 +9,14 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
-    public interface ISequenceEvent : IEvent
+    public abstract class SequenceEvent : StreamSidEvent
     {
         public const string SEQUENCE_NUMBER = "sequenceNumber";
 
         [Required]
         [JsonPropertyOrder(11)]
         [JsonPropertyName(SEQUENCE_NUMBER)]
-        public uint SequenceNumber { get; }
+        [JsonConverter(typeof(JsonStringToUIntConverter))]
+        public required uint SequenceNumber { get; init; }
     }
 }

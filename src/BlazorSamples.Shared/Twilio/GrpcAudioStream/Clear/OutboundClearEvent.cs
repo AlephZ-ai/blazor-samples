@@ -7,13 +7,13 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Clear
 {
-    public record struct OutboundClearEvent : IOutboundEvent, IStreamSidEvent
+    public class OutboundClearEvent : StreamSidEvent, IOutboundEvent
     {
         public const string EVENT_TYPE = "clear";
-
-        public string EventType => EVENT_TYPE;
-        public EventDirection Direction => EventDirection.Outbound;
-        public required string StreamSid { get; init; }
-
+        public OutboundClearEvent()
+        {
+            EventType = EVENT_TYPE;
+            Direction = EventDirection.Outbound;
+        }
     }
 }

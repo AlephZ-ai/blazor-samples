@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
 {
-    public record struct OutboundMedia : IMedia
+    public class OutboundMedia : Abstractions.Media
     {
-        public required byte[] Payload { get; init; }
     }
 }

@@ -1,0 +1,24 @@
+{
+  "event": "start",
+  "sequenceNumber": "2",
+  "start": {
+    "streamSid": "MZ18ad3ab5a668481ce02b83e7395059f0",
+    "accountSid": "AC123",
+    "callSid": "CA123",
+    "tracks": [
+      "inbound",
+      "outbound"
+    ],
+    "customParameters": {
+      "FirstName": "Jane",
+      "LastName": "Doe",
+      "RemoteParty": "Bob"
+    },
+    "mediaFormat": {
+      "encoding": "audio/x-mulaw",
+      "sampleRate": 8000,
+      "channels": 1
+    }
+  },
+  "streamSid": "MZ18ad3ab5a668481ce02b83e7395059f0"
+}

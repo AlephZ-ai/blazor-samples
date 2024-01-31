@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
 {
-    public record struct InboundCustomParameters
+    public class InboundCustomParameters
     {
     }
 }

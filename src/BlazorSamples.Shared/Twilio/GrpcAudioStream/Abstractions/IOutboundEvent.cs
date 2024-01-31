@@ -14,5 +14,5 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
     [JsonDerivedType(typeof(OutboundMediaEvent), OutboundMediaEvent.EVENT_TYPE)]
     [JsonDerivedType(typeof(OutboundMarkEvent), OutboundMarkEvent.EVENT_TYPE)]
     [JsonDerivedType(typeof(OutboundClearEvent), OutboundClearEvent.EVENT_TYPE)]
-    public interface IOutboundEvent : IEvent { }
+    public interface IOutboundEvent { }
 }

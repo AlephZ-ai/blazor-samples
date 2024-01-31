@@ -1,0 +1,9 @@
+{
+  "event": "stop",
+  "sequenceNumber": "5",
+  "stop": {
+    "accountSid": "AC123",
+    "callSid": "CA123"
+  },
+  "streamSid": "MZ18ad3ab5a668481ce02b83e7395059f0"
+}

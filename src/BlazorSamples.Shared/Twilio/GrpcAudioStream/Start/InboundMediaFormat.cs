@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
 {
-    public record struct InboundMediaFormat
+    public class InboundMediaFormat
     {
         public const string ENCODING = "encoding";
         public const string SAMPLE_RATE = "sampleRate";

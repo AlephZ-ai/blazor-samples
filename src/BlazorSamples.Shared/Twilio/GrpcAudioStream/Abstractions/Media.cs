@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
-    public interface IMedia
+    public abstract class Media
     {
         public const string EVENT_TYPE = "media";
         public const string MEDIA = EVENT_TYPE;
@@ -17,6 +17,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         [Required(AllowEmptyStrings = false)]
         [JsonPropertyOrder(99)]
         [JsonPropertyName(PAYLOAD)]
-        public byte[] Payload { get; }
+        public required byte[] Payload { get; init; }
     }
 }

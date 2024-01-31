@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
 {
-    public record struct InboundStop
+    public class InboundStop
     {
         public const string ACCOUNT_SID = "accountSid";
         public const string CALL_SID = "callSid";

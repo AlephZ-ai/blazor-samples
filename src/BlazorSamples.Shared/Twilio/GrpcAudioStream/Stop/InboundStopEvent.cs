@@ -9,19 +9,19 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
 {
-    public record struct InboundStopEvent : IInboundEvent, ISequenceEvent, IStreamSidEvent
+    public class InboundStopEvent : SequenceEvent, IInboundEvent
     {
         public const string EVENT_TYPE = "stop";
         public const string STOP = EVENT_TYPE;
-
-        public string EventType => EVENT_TYPE;
-        public EventDirection Direction => EventDirection.Inbound;
-        public required uint SequenceNumber { get; init; }
-        public required string StreamSid { get; init; }
 
         [Required]
         [JsonPropertyOrder(101)]
         [JsonPropertyName(STOP)]
         public required InboundStop Stop { get; init; }
+        public InboundStopEvent()
+        {
+            EventType = EVENT_TYPE;
+            Direction = EventDirection.Inbound;
+        }
     }
 }

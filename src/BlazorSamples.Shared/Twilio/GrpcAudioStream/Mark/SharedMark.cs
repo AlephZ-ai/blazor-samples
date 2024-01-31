@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
 {
-    public record struct SharedMark
+    public class SharedMark
     {
         public const string NAME = "name";
 

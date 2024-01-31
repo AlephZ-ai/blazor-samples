@@ -10,6 +10,48 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="twilio\inbound-connected.json" />
+    <None Remove="twilio\inbound-mark.json" />
+    <None Remove="twilio\inbound-media-in-track.json" />
+    <None Remove="twilio\inbound-media-out-track.json" />
+    <None Remove="twilio\inbound-start.json" />
+    <None Remove="twilio\inbound-stop.json" />
+    <None Remove="twilio\outbound-clear.json" />
+    <None Remove="twilio\outbound-mark.json" />
+    <None Remove="twilio\outbound-media.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="twilio\inbound-connected.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\inbound-mark.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\inbound-media-in-track.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\inbound-media-out-track.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\inbound-start.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\inbound-stop.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\outbound-clear.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\outbound-mark.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="twilio\outbound-media.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1" />

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
-    public interface IStreamSidEvent : IEvent
+    public abstract class StreamSidEvent : Event
     {
         public const string STREAM_SID = "streamSid";
 
         [Required]
         [JsonPropertyOrder(9999)]
         [JsonPropertyName(STREAM_SID)]
-        public string StreamSid { get; }
+        public required string StreamSid { get; init; }
     }
 }

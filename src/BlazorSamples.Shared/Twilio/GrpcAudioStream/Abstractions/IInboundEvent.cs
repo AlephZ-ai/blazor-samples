@@ -17,5 +17,5 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
     [JsonDerivedType(typeof(InboundMediaEvent), InboundMediaEvent.EVENT_TYPE)]
     [JsonDerivedType(typeof(InboundStopEvent), InboundStopEvent.EVENT_TYPE)]
     [JsonDerivedType(typeof(InboundMarkEvent), InboundMarkEvent.EVENT_TYPE)]
-    public interface IInboundEvent : IEvent { }
+    public interface IInboundEvent { }
 }
