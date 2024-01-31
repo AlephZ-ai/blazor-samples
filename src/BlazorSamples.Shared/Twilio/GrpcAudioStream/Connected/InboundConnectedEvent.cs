@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Connected
 {
-    public record struct InboundConnectedEvent : IEvent
+    public record struct InboundConnectedEvent : IInboundEvent
     {
         public const string EVENT_TYPE = "connected";
         public const string PROTOCOL = "protocol";

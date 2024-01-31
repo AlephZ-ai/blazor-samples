@@ -9,7 +9,7 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
 {
-    public record struct OutboundMediaEvent : IMediaEvent<OutboundMedia>
+    public record struct OutboundMediaEvent : IOutboundEvent, IMediaEvent<OutboundMedia>
     {
         public const string EVENT_TYPE = IMedia.EVENT_TYPE;
 

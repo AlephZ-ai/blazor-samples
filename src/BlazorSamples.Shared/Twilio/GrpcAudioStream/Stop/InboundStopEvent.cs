@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
 {
-    public record struct InboundStopEvent : ISequenceEvent, IStreamSidEvent
+    public record struct InboundStopEvent : IInboundEvent, ISequenceEvent, IStreamSidEvent
     {
         public const string EVENT_TYPE = "stop";
         public const string STOP = EVENT_TYPE;

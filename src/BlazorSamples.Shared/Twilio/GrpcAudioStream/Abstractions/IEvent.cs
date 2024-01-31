@@ -15,14 +15,6 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop;
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
     [JsonPolymorphic(TypeDiscriminatorPropertyName = EVENT)]
-    [JsonDerivedType(typeof(InboundConnectedEvent), InboundConnectedEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(InboundStartEvent), InboundStartEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(InboundMediaEvent), InboundMediaEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(InboundStopEvent), InboundStopEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(InboundMarkEvent), InboundMarkEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(OutboundMediaEvent), OutboundMediaEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(OutboundMarkEvent), OutboundMarkEvent.EVENT_TYPE)]
-    [JsonDerivedType(typeof(OutboundClearEvent), OutboundClearEvent.EVENT_TYPE)]
     public interface IEvent
     {
         public const string EVENT = "event";
