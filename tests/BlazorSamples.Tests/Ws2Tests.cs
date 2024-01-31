@@ -37,7 +37,7 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public async Task _EchoTest()
+        public async Task EchoTest()
         {
             // Arrange
             TestWebSocketServer.Path = "/echo";
