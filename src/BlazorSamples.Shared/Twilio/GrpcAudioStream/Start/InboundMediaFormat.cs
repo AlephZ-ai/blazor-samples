@@ -19,17 +19,14 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
         public const int DEFAULT_CHANNELS = 1;
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(1)]
         [JsonPropertyName(ENCODING)]
         public string Encoding { get; init; }
 
         [Required]
-        [JsonPropertyOrder(2)]
         [JsonPropertyName(SAMPLE_RATE)]
         public ushort SampleRate { get; init; }
 
         [Required]
-        [JsonPropertyOrder(3)]
         [JsonPropertyName(CHANNELS)]
         public byte Channels { get; init; }
 

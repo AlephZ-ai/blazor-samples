@@ -13,6 +13,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using KellermanSoftware.CompareNetObjects;
 using Azure.Core;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
 
 namespace BlazorSamples.Tests
 {
@@ -21,17 +23,19 @@ namespace BlazorSamples.Tests
     {
         private static readonly string _base = "twilio";
         private static TestContext _context = null!;
+        private static JsonSerializerOptions _options = null!;
     
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
         {
             _context = context;
+            _options = JsonSerializerOptions.Default;
+            _options = new() { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow };
         }
 
         [TestMethod]
         public async Task StrongJsonTest()
         {
-            var rand = new Random(777);
             var inConnected = JsonTest(await GetFromFile<InboundConnectedEvent>("inbound-connected.json"));
             inConnected = PolymorphismTest<InboundConnectedEvent>(inConnected);
             Assert.AreEqual("connected", inConnected.EventType);
@@ -107,24 +111,24 @@ namespace BlazorSamples.Tests
         T JsonTest<T>(T input)
             where T : Event
         {
-            var json = JsonSerializer.Serialize(input);
-            var output = JsonSerializer.Deserialize<T>(json);
+            var json = JsonSerializer.Serialize(input, _options);
+            var output = JsonSerializer.Deserialize<T>(json, _options);
             input.ShouldCompare(output);
             return output!;
         }
 
         T PolymorphismTest<T>(IInboundEvent input)
         {
-            var json = JsonSerializer.Serialize(input);
-            var output = JsonSerializer.Deserialize<IInboundEvent>(json);
+            var json = JsonSerializer.Serialize(input, _options);
+            var output = JsonSerializer.Deserialize<IInboundEvent>(json,_options);
             input.ShouldCompare(output);
             return (T)output!;
         }
 
         T PolymorphismTest<T>(IOutboundEvent input)
         {
-            var json = JsonSerializer.Serialize(input);
-            var output = JsonSerializer.Deserialize<IOutboundEvent>(json);
+            var json = JsonSerializer.Serialize(input, _options);
+            var output = JsonSerializer.Deserialize<IOutboundEvent>(json, _options);
             input.ShouldCompare(output);
             return (T)output!;
         }
@@ -132,7 +136,7 @@ namespace BlazorSamples.Tests
         async Task<T> GetFromFile<T>(string file)
         {
             await using var stream = File.OpenRead($"{_base}/{file}");
-            var obj = await JsonSerializer.DeserializeAsync<T>(stream);
+            var obj = await JsonSerializer.DeserializeAsync<T>(stream, _options);
             return obj!;
         }
     }

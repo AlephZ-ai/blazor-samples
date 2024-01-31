@@ -16,7 +16,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
 
 
         [Required]
-        [JsonPropertyOrder(101)]
         [JsonPropertyName(MARK)]
         public required SharedMark Mark { get; init; }
         public InboundMarkEvent()

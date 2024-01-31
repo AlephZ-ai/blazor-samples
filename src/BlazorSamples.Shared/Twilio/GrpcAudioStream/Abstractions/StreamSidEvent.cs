@@ -13,7 +13,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         public const string STREAM_SID = "streamSid";
 
         [Required]
-        [JsonPropertyOrder(9999)]
         [JsonPropertyName(STREAM_SID)]
         public required string StreamSid { get; init; }
     }

@@ -14,7 +14,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         public const string SEQUENCE_NUMBER = "sequenceNumber";
 
         [Required]
-        [JsonPropertyOrder(11)]
         [JsonPropertyName(SEQUENCE_NUMBER)]
         [JsonConverter(typeof(JsonStringToUIntConverter))]
         public required uint SequenceNumber { get; init; }

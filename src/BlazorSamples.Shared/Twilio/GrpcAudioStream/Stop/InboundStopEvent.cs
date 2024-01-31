@@ -15,7 +15,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
         public const string STOP = EVENT_TYPE;
 
         [Required]
-        [JsonPropertyOrder(101)]
         [JsonPropertyName(STOP)]
         public required InboundStop Stop { get; init; }
         public InboundStopEvent()

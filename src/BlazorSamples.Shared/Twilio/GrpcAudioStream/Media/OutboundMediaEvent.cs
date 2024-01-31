@@ -15,7 +15,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
         public const string MEDIA = EVENT_TYPE;
 
         [Required]
-        [JsonPropertyOrder(101)]
         [JsonPropertyName(MEDIA)]
         public required OutboundMedia Media { get; init; }
         public OutboundMediaEvent()

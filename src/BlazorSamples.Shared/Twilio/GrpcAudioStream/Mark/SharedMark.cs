@@ -13,7 +13,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
         public const string NAME = "name";
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(1)]
         [JsonPropertyName(NAME)]
         public required string Name { get; init; }
     }

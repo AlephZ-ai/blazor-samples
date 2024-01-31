@@ -16,7 +16,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
         public const string START = EVENT_TYPE;
 
         [Required]
-        [JsonPropertyOrder(101)]
         [JsonPropertyName(START)]
         public required InboundStart Start { get; init; }
         public InboundStartEvent()

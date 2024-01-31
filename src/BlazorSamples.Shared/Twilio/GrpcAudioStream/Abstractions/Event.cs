@@ -21,7 +21,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         public const string UNKNOWN = "unknown";
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(1)]
         [JsonPropertyName(EVENT)]
         public string EventType { get; init; } = UNKNOWN;
 

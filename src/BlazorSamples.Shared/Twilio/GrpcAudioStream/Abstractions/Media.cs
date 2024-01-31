@@ -15,7 +15,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         public const string PAYLOAD = "payload";
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(99)]
         [JsonPropertyName(PAYLOAD)]
         public required byte[] Payload { get; init; }
     }

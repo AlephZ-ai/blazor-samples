@@ -14,12 +14,10 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
         public const string CALL_SID = "callSid";
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(1)]
         [JsonPropertyName(ACCOUNT_SID)]
         public required string AccountSid { get; init; }
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(3)]
         [JsonPropertyName(CALL_SID)]
         public required string CallSid { get; init; }
     }

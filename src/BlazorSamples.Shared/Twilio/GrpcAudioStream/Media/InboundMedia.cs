@@ -17,18 +17,15 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
         public const string TIMESTAMP = "timestamp";
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(1)]
         [JsonPropertyName(TRACK)]
         public required string Track { get; init; }
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(2)]
         [JsonPropertyName(CHUNK)]
         [JsonConverter(typeof(JsonStringToUIntConverter))]
         public required uint Chunk { get; init; }
 
         [Required(AllowEmptyStrings = false)]
-        [JsonPropertyOrder(3)]
         [JsonPropertyName(TIMESTAMP)]
         [JsonConverter(typeof(JsonStringToTimeSpanConverter))]
         public required TimeSpan Timestamp { get; init; }
