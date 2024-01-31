@@ -19,7 +19,8 @@ using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.TextToSpeech;
 using BlazorSamples.Shared.TextToText;
 using System.Diagnostics;
-using BlazorSamples.Shared.TwilioOld;
+using BlazorSamples.Shared.Twilio.GrpcAudioStream.Media;
+using BlazorSamples.Shared.Twilio.GrpcAudioStream.Clear;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -136,13 +137,13 @@ static async Task ProcessTwilioInputAudio(
                     {
                         await foreach (var responseAudioChunk in textToSpeech.Voice(responseSentence, ct).WithCancellation(ct).ConfigureAwait(false))
                         {
-                            var audio = new AudioChunk
+                            var audio = new OutboundMediaEvent
                             {
-                                streamSid = streamSid!,
-                                media = new()
+                                StreamSid = streamSid!,
+                                Media = new()
                                 {
-                                    payload = Convert.ToBase64String(responseAudioChunk)
-                                }
+                                    Payload = responseAudioChunk,
+                                },
                             };
 
                             var json = JsonSerializer.SerializeToUtf8Bytes(audio);
@@ -157,7 +158,7 @@ static async Task ProcessTwilioInputAudio(
             }
             else if (!string.IsNullOrEmpty(result.SentenceFragment))
             {
-                var clear = new Clear { streamSid = streamSid! };
+                var clear = new OutboundClearEvent { StreamSid = streamSid! };
                 var json = JsonSerializer.SerializeToUtf8Bytes(clear);
                 await webSocket.SendAsync(json, WebSocketMessageType.Text, true, ct).ConfigureAwait(false);
             }
