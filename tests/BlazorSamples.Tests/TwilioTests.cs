@@ -37,9 +37,9 @@ namespace BlazorSamples.Tests
                 Version = "1.0.0",
             });
 
+            inConnected = PolymorphismTest<InboundConnectedEvent>(inConnected);
             Assert.AreEqual("connected", inConnected.EventType);
             Assert.AreEqual(EventDirection.Inbound, inConnected.Direction);
-            PolymorphismTest(inConnected);
 
 
             var streamSid = Guid.NewGuid().ToString();
@@ -82,9 +82,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            inStart = PolymorphismTest<InboundStartEvent>(inStart);
             Assert.AreEqual("start", inStart.EventType);
             Assert.AreEqual(EventDirection.Inbound, inStart.Direction);
-            PolymorphismTest(inStart);
 
 
             var inMedia = JsonTest(new InboundMediaEvent
@@ -100,9 +100,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            inMedia = PolymorphismTest<InboundMediaEvent>(inMedia);
             Assert.AreEqual("media", inMedia.EventType);
             Assert.AreEqual(EventDirection.Inbound, inMedia.Direction);
-            PolymorphismTest(inMedia);
 
 
             var inStop = JsonTest(new InboundStopEvent
@@ -116,9 +116,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            inStop = PolymorphismTest<InboundStopEvent>(inStop);
             Assert.AreEqual("stop", inStop.EventType);
             Assert.AreEqual(EventDirection.Inbound, inStop.Direction);
-            PolymorphismTest(inStop);
 
 
             var inMark = JsonTest(new InboundMarkEvent
@@ -130,9 +130,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            inMark = PolymorphismTest<InboundMarkEvent>(inMark);
             Assert.AreEqual("mark", inMark.EventType);
             Assert.AreEqual(EventDirection.Inbound, inMark.Direction);
-            PolymorphismTest(inMark);
 
 
             var outMedia = JsonTest(new OutboundMediaEvent
@@ -144,9 +144,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            outMedia = PolymorphismTest<OutboundMediaEvent>(outMedia);
             Assert.AreEqual("media", outMedia.EventType);
             Assert.AreEqual(EventDirection.Outbound, outMedia.Direction);
-            PolymorphismTest(outMedia);
 
 
             var outMark = JsonTest(new OutboundMarkEvent
@@ -158,9 +158,9 @@ namespace BlazorSamples.Tests
                 },
             });
 
+            outMark = PolymorphismTest<OutboundMarkEvent>(outMark);
             Assert.AreEqual("mark", outMark.EventType);
             Assert.AreEqual(EventDirection.Outbound, outMark.Direction);
-            PolymorphismTest(outMark);
 
 
             var outClear = JsonTest(new OutboundClearEvent
@@ -168,9 +168,9 @@ namespace BlazorSamples.Tests
                 StreamSid = Guid.NewGuid().ToString(),
             });
 
+            outClear = PolymorphismTest<OutboundClearEvent>(outClear);
             Assert.AreEqual("clear", outClear.EventType);
             Assert.AreEqual(EventDirection.Outbound, outClear.Direction);
-            PolymorphismTest(outClear);
         }
 
         T JsonTest<T>(T input)
@@ -182,18 +182,20 @@ namespace BlazorSamples.Tests
             return output!;
         }
 
-        void PolymorphismTest(IInboundEvent input)
+        T PolymorphismTest<T>(IInboundEvent input)
         {
             var json = JsonSerializer.Serialize(input);
             var output = JsonSerializer.Deserialize<IInboundEvent>(json);
             input.ShouldCompare(output);
+            return (T)output!;
         }
 
-        void PolymorphismTest(IOutboundEvent input)
+        T PolymorphismTest<T>(IOutboundEvent input)
         {
             var json = JsonSerializer.Serialize(input);
             var output = JsonSerializer.Deserialize<IOutboundEvent>(json);
             input.ShouldCompare(output);
+            return (T)output!;
         }
     }
 }
