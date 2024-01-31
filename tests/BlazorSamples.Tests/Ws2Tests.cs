@@ -197,7 +197,7 @@ namespace BlazorSamples.Tests
                     {
                         var request = new JsonTest { Message = GenerateRandomString(_random.Next(1000, 3000)) };
                         await SendJsonAsync(webSocket, request, ct).ConfigureAwait(false);
-                        var response = await ReceiveJsonAsync<JsonTest>(webSocket, ct).ConfigureAwait(false);
+                        var response = (await ReceiveJsonAsync<JsonTest>(webSocket, ct).ConfigureAwait(false))!;
                         Assert.AreEqual(request.Message, response.Message);
                     }, ct).ConfigureAwait(false);
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "OK", ct).ConfigureAwait(false);

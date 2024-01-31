@@ -15,6 +15,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         [Required]
         [JsonPropertyOrder(11)]
         [JsonPropertyName(SEQUENCE_NUMBER)]
-        public int SequenceNumber { get; }
+        public uint SequenceNumber { get; }
     }
 }

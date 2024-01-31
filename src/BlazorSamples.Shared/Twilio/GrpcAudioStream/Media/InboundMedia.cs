@@ -25,11 +25,11 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
         [Required(AllowEmptyStrings = false)]
         [JsonPropertyOrder(2)]
         [JsonPropertyName(CHUNK)]
-        public required string Chunk { get; init; }
+        public required uint Chunk { get; init; }
 
         [Required(AllowEmptyStrings = false)]
         [JsonPropertyOrder(3)]
         [JsonPropertyName(TIMESTAMP)]
-        public required string Timestamp { get; init; }
+        public required ulong Timestamp { get; init; }
     }
 }

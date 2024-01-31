@@ -17,7 +17,7 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
 
         public string EventType => EVENT_TYPE;
         public EventDirection Direction => EventDirection.Inbound;
-        public required int SequenceNumber { get; init; }
+        public required uint SequenceNumber { get; init; }
         public required string StreamSid { get; init; }
 
         [Required]

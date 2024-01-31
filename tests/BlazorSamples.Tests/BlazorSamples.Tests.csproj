@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
@@ -19,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\BlazorSamples.Shared\BlazorSamples.Shared.csproj" />
     <ProjectReference Include="..\..\src\BlazorSamples.Ws2\BlazorSamples.Ws2.csproj" />
   </ItemGroup>
 

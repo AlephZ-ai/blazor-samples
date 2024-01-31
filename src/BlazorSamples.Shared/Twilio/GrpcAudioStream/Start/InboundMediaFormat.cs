@@ -26,12 +26,12 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Start
         [Required]
         [JsonPropertyOrder(2)]
         [JsonPropertyName(SAMPLE_RATE)]
-        public int SampleRate { get; init; }
+        public ushort SampleRate { get; init; }
 
         [Required]
         [JsonPropertyOrder(3)]
         [JsonPropertyName(CHANNELS)]
-        public int Channels { get; init; }
+        public byte Channels { get; init; }
 
         public InboundMediaFormat()
         {

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
     public interface IMediaEvent<T> : IStreamSidEvent
-        where T : IMedia
+        where T : struct, IMedia
     {
         [Required]
         [JsonPropertyOrder(101)]

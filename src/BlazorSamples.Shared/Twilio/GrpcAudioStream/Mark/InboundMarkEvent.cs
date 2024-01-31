@@ -15,7 +15,7 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
 
         public string EventType => EVENT_TYPE;
         public EventDirection Direction => EventDirection.Inbound;
-        public required int SequenceNumber { get; init; }
+        public required uint SequenceNumber { get; init; }
         public required SharedMark Mark { get; init; }
     }
 }
