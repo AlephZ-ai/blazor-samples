@@ -52,7 +52,7 @@ namespace BlazorSamples.Tests
                     StreamSid = streamSid,
                     AccountSid = Guid.NewGuid().ToString(),
                     CallSid = Guid.NewGuid().ToString(),
-                    Tracks = [],
+                    Tracks = new List<string>(),
                 },
             });
 
