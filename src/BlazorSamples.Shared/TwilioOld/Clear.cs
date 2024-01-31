@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared.Twilio
+namespace BlazorSamples.Shared.TwilioOld
 {
     public class Clear
     {

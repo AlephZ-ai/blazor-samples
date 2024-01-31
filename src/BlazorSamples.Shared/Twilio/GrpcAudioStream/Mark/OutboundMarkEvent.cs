@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
+
+namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
+{
+    public record struct OutboundMarkEvent : IMarkEvent, IStreamSidEvent
+    {
+        public const string EVENT_TYPE = IMarkEvent.EVENT_TYPE;
+
+        public string EventType => EVENT_TYPE;
+        public EventDirection Direction => EventDirection.Outbound;
+        public required string StreamSid { get; init; }
+        public required SharedMark Mark { get; init; }
+    }
+}

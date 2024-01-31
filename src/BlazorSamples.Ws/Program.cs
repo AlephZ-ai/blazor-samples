@@ -19,7 +19,7 @@ using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.TextToSpeech;
 using BlazorSamples.Shared.TextToText;
 using System.Diagnostics;
-using BlazorSamples.Shared.Twilio;
+using BlazorSamples.Shared.TwilioOld;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
