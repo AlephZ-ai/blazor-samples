@@ -1,5 +1,9 @@
-﻿using Google.Protobuf;
+﻿using BlazorSamples.Shared.Twilio.GrpcAudioStream;
+using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
+using Google.Protobuf;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using Utf8BytesAsyncEnumerable = System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<byte>>;
@@ -12,6 +16,12 @@ namespace BlazorSamples.Ws2
     public static class AsyncEnumerableExtensions
     {
         public const int DefaultBufferSize = 4 * 1024;
+        public static IAsyncEnumerable<DefaultTwilioProcessorResult?> ProcessEvent(this IAsyncEnumerable<IInboundEvent> input)
+        {
+            var processor = new DefaultTwilioProcessor();
+            return input.Select(processor.ProcessEvent);
+        }
+
         public static IAsyncEnumerable<T?> ToTFromJsonAsyncEnumerable<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
         {
             jsonOptions ??= JsonSerializerOptions.Default;
@@ -56,6 +66,10 @@ namespace BlazorSamples.Ws2
 
         public static IAsyncEnumerable<ReadOnlyMemory<T>> ExcludeEmpty<T>(this IAsyncEnumerable<ReadOnlyMemory<T>> source) =>
             source.Where(buffer => buffer.Length > 0);
+
+        public static IAsyncEnumerable<T> ExcludeNull<T>(this IAsyncEnumerable<T?> source)
+            where T : class =>
+            source.Where(item => item is not null)!;
 
         internal static void ResizeBufferIfNeeded(MemoryPool<byte> pool, ref IMemoryOwner<byte> owner, ref Memory<byte> buffer, int offset, int addedLength)
         {

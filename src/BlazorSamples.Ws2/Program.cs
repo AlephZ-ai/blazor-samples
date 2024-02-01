@@ -64,11 +64,15 @@ static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
     var jsonOptions = new JsonSerializerOptions
     {
     };
- 
+
     var receiveLoop = webSocket
         .ReceiveAsyncEnumerable(1024 * 4, ct)
         .RecombineFragmentsAsync(initialBufferSize, ct)
-        .ToTFromJsonAsyncEnumerable<IInboundEvent>(jsonOptions);
+        .ExcludeEmpty()
+        .ToTFromJsonAsyncEnumerable<IInboundEvent>(jsonOptions)
+        .ExcludeNull()
+        .ProcessEvent()
+        .ExcludeNull();
 
     var receiveLoopEchoWrapper = receiveLoop.ToJsonBytesAsyncEnumerable(jsonOptions);
     await webSocket.SendAsyncEnumerable(receiveLoopEchoWrapper, WebSocketMessageType.Text, ct)
