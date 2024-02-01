@@ -19,7 +19,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         internal protected Task HandleAsync(InboundStopEvent stopEvent);
         internal protected Task HandleAsync(InboundMarkEvent markEvent);
         internal protected Task HandleAsync(IEvent? unknownEvent);
-        public Task ProcessEventAsync<T>(T inboundEvent)
-            where T : IInboundEvent => inboundEvent.RunProcessorAsync(this);
+        public Task ProcessEventAsync(IInboundEvent inboundEvent) => inboundEvent.RunProcessorAsync(this);
     }
 }
