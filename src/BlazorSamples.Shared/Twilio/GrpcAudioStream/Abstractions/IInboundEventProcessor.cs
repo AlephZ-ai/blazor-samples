@@ -13,12 +13,12 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
     public interface IInboundEventProcessor<T>
     {
-        internal protected Task<T> HandleAsync(InboundConnectedEvent connectedEvent);
-        internal protected Task<T> HandleAsync(InboundStartEvent startEvent);
-        internal protected Task<T> HandleAsync(InboundMediaEvent mediaEvent);
-        internal protected Task<T> HandleAsync(InboundStopEvent stopEvent);
-        internal protected Task<T> HandleAsync(InboundMarkEvent markEvent);
-        protected static Task<T> DefaultProcessEventAsync(IInboundEventProcessor<T> processor, IInboundEvent inboundEvent) => inboundEvent.RunProcessorAsync(processor);
-        public Task<T> ProcessEventAsync(IInboundEvent inboundEvent) => IInboundEventProcessor<T>.DefaultProcessEventAsync(this, inboundEvent);
+        internal protected T Handle(InboundConnectedEvent connectedEvent);
+        internal protected T Handle(InboundStartEvent startEvent);
+        internal protected T Handle(InboundMediaEvent mediaEvent);
+        internal protected T Handle(InboundStopEvent stopEvent);
+        internal protected T Handle(InboundMarkEvent markEvent);
+        protected static T DefaultProcessEvent(IInboundEventProcessor<T> processor, IInboundEvent inboundEvent) => inboundEvent.RunProcessor(processor);
+        public T ProcessEvent(IInboundEvent inboundEvent) => IInboundEventProcessor<T>.DefaultProcessEvent(this, inboundEvent);
     }
 }

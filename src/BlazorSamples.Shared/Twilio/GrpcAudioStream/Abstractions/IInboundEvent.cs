@@ -20,6 +20,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
     [JsonDerivedType(typeof(InboundMarkEvent), InboundMarkEvent.EVENT_TYPE)]
     public interface IInboundEvent : IEvent
     {
-        internal Task<T> RunProcessorAsync<T>(IInboundEventProcessor<T> processor);
+        internal T RunProcessor<T>(IInboundEventProcessor<T> processor);
     }
 }

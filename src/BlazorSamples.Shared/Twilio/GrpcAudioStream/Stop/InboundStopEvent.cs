@@ -23,6 +23,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop
             Direction = EventDirection.Inbound;
         }
 
-        Task<T> IInboundEvent.RunProcessorAsync<T>(IInboundEventProcessor<T> processor) => processor.HandleAsync(this);
+        T IInboundEvent.RunProcessor<T>(IInboundEventProcessor<T> processor) => processor.Handle(this);
     }
 }
