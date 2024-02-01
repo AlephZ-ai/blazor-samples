@@ -2,4 +2,7 @@
         {
             EventType = EVENT_TYPE;
             Direction = EventDirection.Inbound;
-        }    }}
+        }
+
+        Task<T> IInboundEvent.RunProcessorAsync<T>(IInboundEventProcessor<T> processor) => processor.HandleAsync(this);
+    }}

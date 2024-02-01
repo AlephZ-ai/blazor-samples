@@ -5,6 +5,7 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Start;
 using BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -19,6 +20,6 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
     [JsonDerivedType(typeof(InboundMarkEvent), InboundMarkEvent.EVENT_TYPE)]
     public interface IInboundEvent : IEvent
     {
-        internal Task RunProcessorAsync(IInboundEventProcessor processor) => processor.HandleAsync(this);
+        internal Task<T> RunProcessorAsync<T>(IInboundEventProcessor<T> processor);
     }
 }
