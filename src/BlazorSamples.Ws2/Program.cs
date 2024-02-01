@@ -1,7 +1,9 @@
 using BlazorSamples.Ws2;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net.WebSockets;
+using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +32,7 @@ if (!app.Environment.IsDevelopment())
 app.UseForwardedHeaders();
 app.UseCors();
 app.UseWebSockets();
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", () => @"[""Hello World!""]");
 app.MapGet("/stream", async (
     HttpContext context,
     CancellationToken ct) =>
@@ -38,7 +40,7 @@ app.MapGet("/stream", async (
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await Echo(webSocket, ct).ConfigureAwait(false);
+        await EchoJson(webSocket, ct).ConfigureAwait(false);
     }
     else
     {
@@ -56,9 +58,22 @@ await app.RunAsync();
 
 
 
-static async Task Echo(WebSocket webSocket, CancellationToken ct = default)
+static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
 {
-    var receiveLoop = webSocket.ReceiveAsyncEnumerable(1024 * 4, ct).Select(r => r.Buffer);
-    await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct).LastAsync(cancellationToken: ct).ConfigureAwait(false);
+    var initialBufferSize = 4 * 1024;
+    var jsonOptions = new JsonSerializerOptions
+    {
+    };
+ 
+    var receiveLoop = webSocket
+        .ReceiveAsyncEnumerable(1024 * 4, ct)
+        .RecombineFragmentsAsync(initialBufferSize, ct)
+        .ToTFromJsonAsyncEnumerable<IInboundEvent>(jsonOptions);
+
+    var receiveLoopEchoWrapper = receiveLoop.ToJsonBytesAsyncEnumerable(jsonOptions);
+    await webSocket.SendAsyncEnumerable(receiveLoopEchoWrapper, WebSocketMessageType.Text, ct)
+        .LastAsync(cancellationToken: ct)
+        .ConfigureAwait(false);
+
     await webSocket.CloseAsync(webSocket.CloseStatus ?? WebSocketCloseStatus.EndpointUnavailable, webSocket.CloseStatusDescription ?? "Server shutting down", ct).ConfigureAwait(false);
 }
