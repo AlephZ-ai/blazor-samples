@@ -84,8 +84,7 @@ static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
         .Select(twilio => twilio.Payload)
         .ConvertAudioAsync(audioConverter, ct);
 
-    var receiveLoopEchoWrapper = receiveLoop.ToJsonBytesAsyncEnumerable(jsonOptions);
-    await webSocket.SendAsyncEnumerable(receiveLoopEchoWrapper, WebSocketMessageType.Text, ct)
+    await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 
