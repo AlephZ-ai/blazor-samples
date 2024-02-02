@@ -21,8 +21,8 @@
 		<PackageReference Include="Grpc.Net.Client.Web" Version="2.60.0" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.60.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.60.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.1" />
 		<PackageReference Include="Microsoft.TypeChat.Schema" Version="0.1.231013.1-preview" />
@@ -35,9 +35,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Protobuf Include="..\BlazorSamples.Rpc\Protos\playHT.proto" GrpcServices="Client">
-	    <Link>PlayHT\Protos\playHT.proto</Link>
-	  </Protobuf>
+		<Protobuf Include="..\BlazorSamples.Rpc\Protos\playHT.proto" GrpcServices="Client">
+			<Link>TextToSpeech\PlayHT\Protos\playHT.proto</Link>
+		</Protobuf>
 	</ItemGroup>
 
 </Project>

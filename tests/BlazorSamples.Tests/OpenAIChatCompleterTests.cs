@@ -35,7 +35,7 @@ public class OpenAIChatCompleterTests
         var client = new OpenAIClient(GetOpenAIKey(configuration));
         var completer = new OpenAIChatCompleter(options, client);
         var result = string.Empty;
-        await foreach (var text in completer.CompleteAsync(ProduceQuery("When was Washington born?")).WithCancellation(ct))
+        await foreach (var text in completer.CompleteAsync(ProduceQuery("When was Washington born?", "Where did Lincoln Die?")).WithCancellation(ct))
         {
             result += text;
         }
@@ -51,9 +51,12 @@ public class OpenAIChatCompleterTests
         return key;
     }
     
-    private static async IAsyncEnumerable<string> ProduceQuery(string query)
+    private static async IAsyncEnumerable<string> ProduceQuery(params string[] queries)
     {
         await Task.Yield();
-        yield return query;
+        foreach (var query in queries)
+        {
+            yield return query;
+        }
     }
 }

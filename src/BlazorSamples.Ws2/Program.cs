@@ -11,6 +11,7 @@ using BlazorSamples.Shared.ChatCompletion.OpenAI;
 using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
 using BlazorSamples.Shared.TextToSpeech;
+using BlazorSamples.TextToSpeech.PlayHT.Protos.V1;
 
 var initialBufferSize = 4 * 1024;
 var outSampleRate = 16000;
@@ -37,7 +38,7 @@ builder.AddFfmpegAudioConverter(new()
     InSampleRate = 8000,
     OutFormat = "wav",
     OutSampleRate = outSampleRate,
-    OutSpeed = Speed.VeryFast,
+    OutSpeed = Speed.UltraFast,
 });
 
 builder.AddVoskSpeechRecognizer(new()
@@ -59,6 +60,11 @@ builder.AddPlayHTTextToSpeechGenerator(configuration => new()
     User = configuration.GetValue<string>("playHT:user")!,
     Key = configuration.GetValue<string>("playHT:key")!,
     JsonOptions = jsonOptions,
+    Format = Format.Mulaw,
+    SampleRate = 8000,
+    Temperature = 1.2f,
+    Quality = Quality.Draft,
+    Voice = "s3://mockingbird-prod/susan_vo_training_46ffcc60-d630-42f6-acfe-4affd003ae7a/voices/speaker/manifest.json",
 });
 
 var app = builder.Build();

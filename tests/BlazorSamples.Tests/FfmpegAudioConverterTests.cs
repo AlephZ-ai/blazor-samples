@@ -16,8 +16,8 @@ namespace BlazorSamples.Tests
     [TestClass]
     public class FfmpegAudioConverterTests
     {
-        private const string MULAW = "files/mulaw.wav";
-        private const string OUT = "files/out.wav";
+        private const string Mulaw = "files/mulaw.wav";
+        private const string Out = "files/out.wav";
         private static bool _write = false;
         private static TestContext _context = null!;
 
@@ -41,7 +41,7 @@ namespace BlazorSamples.Tests
             };
 
             var converter = new FfmpegAudioConverter(options);
-            await WriteFileAsync(OUT, converter.ConvertAsync(ReadFileAsync(MULAW, ct)), ct);
+            await WriteFileAsync(Out, converter.ConvertAsync(ReadFileAsync(Mulaw, ct), ct), ct);
         }
 
         private static IAsyncEnumerable<ReadOnlyMemory<byte>> ReadFileAsync(string path, CancellationToken ct)

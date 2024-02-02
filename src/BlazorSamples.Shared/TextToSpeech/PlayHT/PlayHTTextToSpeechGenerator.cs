@@ -12,6 +12,7 @@ public sealed class PlayHTTextToSpeechGenerator(PlayHTTextToSpeechGeneratorOptio
 {
     public async IAsyncEnumerable<ReadOnlyMemory<byte>> GenerateAsync(IAsyncEnumerable<string> source, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        // TODO: Cache channel
         var (client, channel, lease) = await InitializeClient(ct).ConfigureAwait(false);
         try
         {
