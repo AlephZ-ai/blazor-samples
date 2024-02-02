@@ -1,17 +1,7 @@
-﻿using Azure.AI.OpenAI;
-using BlazorSamples.Shared.Clients;
-using Microsoft.AspNetCore.Components.WebAssembly.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Vosk;
+﻿using System.Runtime.CompilerServices;
+using Azure.AI.OpenAI;
 
-namespace BlazorSamples.Shared.TextToText
+namespace BlazorSamples.Shared.Old.TextToText
 {
     public class OpenAITextToText(OpenAIClient openAI) : ITextToText
     {

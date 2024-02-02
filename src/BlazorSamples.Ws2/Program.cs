@@ -6,6 +6,7 @@ using System.Text.Json;
 using BlazorSamples.Shared.AudioConverter.Ffmpeg;
 using FFMpegCore.Enums;
 using BlazorSamples.Shared.AudioConverter;
+using BlazorSamples.Shared.ChatCompletion;
 using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
 
@@ -63,12 +64,13 @@ app.MapGet("/stream", async (
     HttpContext context,
     IAudioConverter audioConverter,
     ISpeechRecognizer speechRecognizer,
+    IChatCompleter chatCompleter,
     CancellationToken ct) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, ct).ConfigureAwait(false);
+        await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, chatCompleter, ct).ConfigureAwait(false);
     }
     else
     {
@@ -92,6 +94,7 @@ static async Task ProcessAsync(
     JsonSerializerOptions jsonOptions,
     IAudioConverter audioConverter,
     ISpeechRecognizer speechRecognizer,
+    IChatCompleter chatCompleter,
     CancellationToken ct = default)
 {
     var receiveLoop = webSocket
@@ -104,9 +107,12 @@ static async Task ProcessAsync(
         .ExcludeNull()
         .Select(twilio => twilio.Payload)
         .ConvertAudioAsync(audioConverter, ct)
-        .RecognizeSpeechAsync(speechRecognizer, ct);
+        .RecognizeSpeechAsync(speechRecognizer, ct)
+        .Where(text => text.IsPauseDetected && !string.IsNullOrEmpty(text.Fragment))
+        .Select(text => text.Fragment!)
+        .CompleteChatAsync(chatCompleter, ct);
 
-    await webSocket.SendAllAsync(receiveLoop.ToJsonBytesAsync(jsonOptions), WebSocketMessageType.Text, ct)
+    await webSocket.SendAllAsync(receiveLoop.ToBytesAsync(initialBufferSize), WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 
