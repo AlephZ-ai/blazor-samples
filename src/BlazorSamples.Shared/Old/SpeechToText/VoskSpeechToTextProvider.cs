@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
+using BlazorSamples.Shared.SpeechRecognition.Vosk;
 using Vosk;
 
 namespace BlazorSamples.Shared.Old.SpeechToText

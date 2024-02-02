@@ -1,5 +1,5 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-namespace BlazorSamples.Shared.Old.SpeechToText
+namespace BlazorSamples.Shared.SpeechRecognition.Vosk
 {
     public class TimingResult
     {
@@ -14,7 +14,7 @@ namespace BlazorSamples.Shared.Old.SpeechToText
         public List<TimingResult> result { get; set; }
         public List<double> spk { get; set; }
         public int spk_frames { get; set; }
-        public string text { get; set; }
+        public string? text { get; set; }
     }
 
     public class PartialResult

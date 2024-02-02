@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using BlazorSamples.Shared.Clients;
 using BlazorSamples.Shared.UI;
+using BlazorSamples.Shared.SpeechRecognition.Vosk;
 using BlazorSamples.Shared.Old.SpeechToText;
 
 namespace BlazorSamples.Web.Hubs
