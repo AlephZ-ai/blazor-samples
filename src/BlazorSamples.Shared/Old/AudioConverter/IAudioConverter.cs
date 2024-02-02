@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared.AudioConverter
+namespace BlazorSamples.Shared.Old.AudioConverter
 {
     public interface IAudioConverter
     {

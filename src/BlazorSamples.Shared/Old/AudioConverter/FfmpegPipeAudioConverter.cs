@@ -5,7 +5,7 @@ using System.Collections;
 using System.IO.Pipes;
 using static Google.Protobuf.WireFormat;
 
-namespace BlazorSamples.Shared.AudioConverter
+namespace BlazorSamples.Shared.Old.AudioConverter
 {
     public class FfmpegPipeAudioConverter : IAudioConverter
     {

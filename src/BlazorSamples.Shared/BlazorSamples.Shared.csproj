@@ -28,10 +28,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="PlayHT\Protos\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <Protobuf Include="..\BlazorSamples.Rpc\Protos\playHT.proto" GrpcServices="Client">
 	    <Link>PlayHT\Protos\playHT.proto</Link>
 	  </Protobuf>
