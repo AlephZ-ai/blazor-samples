@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.AudioConverter
 {
-    public static class Extensions
+    public interface IAudioConverter
     {
+        public IAsyncEnumerable<ReadOnlyMemory<byte>> ConvertAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default);
     }
 }

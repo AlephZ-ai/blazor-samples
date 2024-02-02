@@ -48,17 +48,17 @@ namespace BlazorSamples.Ws2
             var owner = pool.Rent(initialBufferSize);
             var buffer = owner.Memory;
             return source
-            .Where(str => !string.IsNullOrEmpty(str))
-            .Select(ReadOnlyMemory<byte> (str) =>
-            {
-                ResizeBufferIfNeeded(pool, ref owner, ref buffer, 0, Encoding.UTF8.GetByteCount(str!));
-                var length = Encoding.UTF8.GetBytes(str, buffer.Span);
-                return buffer[..length];
-            })
-            .Finally(() =>
-            {
-                owner.Dispose();
-            });
+                .Where(str => !string.IsNullOrEmpty(str))
+                .Select(ReadOnlyMemory<byte> (str) =>
+                {
+                    ResizeBufferIfNeeded(pool, ref owner, ref buffer, 0, Encoding.UTF8.GetByteCount(str!));
+                    var length = Encoding.UTF8.GetBytes(str, buffer.Span);
+                    return buffer[..length];
+                })
+                .Finally(() =>
+                {
+                    owner.Dispose();
+                });
         }
 
         public static Utf8StringAsyncEnumerable ToStringAsyncEnumerable(this Utf8BytesAsyncEnumerable source) =>
