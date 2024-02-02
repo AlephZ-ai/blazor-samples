@@ -10,12 +10,13 @@ using Vosk;
 
 namespace BlazorSamples.Shared.SpeechRecognition.Vosk
 {
-    public sealed class VoskSpeechRecognizer(VoskSpeechRecognizerOptions options) : ISpeechRecognizer
+    public sealed class VoskSpeechRecognizer(VoskSpeechRecognizerOptions options) : ISpeechRecognizer, IDisposable
     {
         public const string MODELS = $"{ISpeechRecognizer.MODELS}/vosk";
         private Model? _model;
         private SpkModel? _spk;
         private int _downloaded = 0;
+        private int _disposedValue = 0;
 
         public async IAsyncEnumerable<SpeechRecognitionResult> RecognizeAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, [EnumeratorCancellation] CancellationToken ct = default)
         {
@@ -37,7 +38,7 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
                     {
                         var result = JsonSerializer.Deserialize<PartialResult>(rec.PartialResult(), options.JsonOptions);
                         yield return new SpeechRecognitionResult { Fragment = result?.partial };
-                    }   
+                    }
                 }
 
                 var final = JsonSerializer.Deserialize<FinalResult>(rec.FinalResult(), options.JsonOptions);
@@ -78,6 +79,15 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
                 using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
                 // TODO: Use async methods to extract files
                 archive.ExtractToDirectory(models, overwriteFiles: true);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) == 0)
+            {
+                _model?.Dispose();
+                _spk?.Dispose();
             }
         }
     }
