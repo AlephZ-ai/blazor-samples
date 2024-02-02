@@ -7,6 +7,7 @@ using BlazorSamples.Shared.AudioConverter.Ffmpeg;
 using FFMpegCore.Enums;
 using BlazorSamples.Shared.AudioConverter;
 using BlazorSamples.Shared.ChatCompletion;
+using BlazorSamples.Shared.ChatCompletion.OpenAI;
 using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
 
@@ -46,10 +47,13 @@ builder.AddVoskSpeechRecognizer(new()
     PartialWords = false,
 });
 
-builder.AddOpenAIChatCompleter(new()
+var openAIOptions = new OpenAIChatCompleterOptions
 {
+    SystemMessage = "You are a helpful AI audio voice assistance who answers the phone."
+};
 
-});
+builder.AddAzureOpenAI(openAIOptions.ConnectionName);
+builder.AddOpenAIChatCompleter(openAIOptions);
 
 var app = builder.Build();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();

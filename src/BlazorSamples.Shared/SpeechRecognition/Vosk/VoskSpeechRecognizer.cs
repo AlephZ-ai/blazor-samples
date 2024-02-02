@@ -39,8 +39,11 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
                         var result = JsonSerializer.Deserialize<PartialResult>(rec.PartialResult(), options.JsonOptions);
                         yield return new SpeechRecognitionResult { Fragment = result?.partial };
                     }
+                 
+                    if (ct.IsCancellationRequested) break;
                 }
 
+                if (ct.IsCancellationRequested) yield break;
                 var final = JsonSerializer.Deserialize<FinalResult>(rec.FinalResult(), options.JsonOptions);
                 yield return new SpeechRecognitionResult { Fragment = final?.text, IsPauseDetected = !string.IsNullOrEmpty(final?.text) };
             }
@@ -64,14 +67,13 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
         static async ValueTask DownloadModelAsync(string models, string model, CancellationToken ct)
         {
             var modelPath = $"{models}/{model}";
-            var zipFile = $"{models}/{model}.zip";
             var url = $"https://alphacephei.com/vosk/models/{model}.zip";
             if (!Directory.Exists(modelPath))
             {
                 if (!Directory.Exists(".models")) Directory.CreateDirectory(".models");
                 if (!Directory.Exists(models)) Directory.CreateDirectory(models);
                 var handler = new HttpClientHandler();
-                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+                handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
                 using var client = new HttpClient(handler);
                 using var response = await client.GetAsync(url, ct).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
@@ -84,11 +86,9 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
 
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) == 0)
-            {
-                _model?.Dispose();
-                _spk?.Dispose();
-            }
+            if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) != 0) return;
+            _model?.Dispose();
+            _spk?.Dispose();
         }
     }
 }

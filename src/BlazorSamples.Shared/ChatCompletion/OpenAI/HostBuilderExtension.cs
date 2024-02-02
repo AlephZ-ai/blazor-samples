@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.Hosting
         public static IHostApplicationBuilder AddOpenAIChatCompleter(this IHostApplicationBuilder builder, OpenAIChatCompleterOptions options)
         {
             builder.Services.AddSingleton(options);
-            builder.Services.AddSingleton<IChatCompleter, OpenAIChatCompleter>();
+            builder.Services.AddTransient<IChatCompleter, OpenAIChatCompleter>();
             return builder;
         }
     }

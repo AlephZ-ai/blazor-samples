@@ -18,6 +18,7 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             var ffOptions = new FFOptions();
             var process = ConvertAudioAsync(pipes, ffOptions);
             return pipes.ProcessAllAsync(source, process, ct)
+                .Where(_ => !ct.IsCancellationRequested)
                 .Finally(() => pipes.DisposeAsync().AsTask());
         }
 

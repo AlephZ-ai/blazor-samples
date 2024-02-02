@@ -7,85 +7,79 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
+namespace BlazorSamples.Shared.AudioConverter.Ffmpeg;
+
+internal sealed class NamedPipe : IAsyncDisposable, IDisposable
 {
-    internal sealed class NamedPipe : IAsyncDisposable, IDisposable
+    private const string SERVER = ".";
+    public string Name { get; }
+    public NamedPipeServerStream Server { get; }
+    public NamedPipeClientStream Client { get; }
+    private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
+    private readonly int _initialBufferSize;
+    private int _connected = 0;
+    private int _disposedValue = 0;
+
+    public NamedPipe(string? name = null, int initialBufferSize = 4 * 1024)
     {
-        private const string SERVER = ".";
-        public string Name { get; }
-        public NamedPipeServerStream Server { get; }
-        public NamedPipeClientStream Client { get; }
-        private readonly MemoryPool<byte> _pool = MemoryPool<byte>.Shared;
-        private readonly int _initialBufferSize;
-        private int _connected = 0;
-        private int _disposedValue = 0;
+        Name = name ?? Guid.NewGuid().ToString();
+        _initialBufferSize = initialBufferSize;
+        Server = new(Name, PipeDirection.Out, 1, PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+        Client = new(SERVER, Name, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+    }
 
-        public NamedPipe(string? name = null, int initialBufferSize = 4 * 1024)
+    public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadAllAsync(
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        await EnsureConnectedAsync(ct).ConfigureAwait(false);
+        using var owner = _pool.Rent(_initialBufferSize);
+        var buffer = owner.Memory;
+        int read;
+        while (!ct.IsCancellationRequested && (read = await Client.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
         {
-            Name = name ?? Guid.NewGuid().ToString();
-            _initialBufferSize = initialBufferSize;
-            Server = new(Name, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
-            Client = new(SERVER, Name, PipeDirection.In, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+            yield return buffer[..read];
         }
+    }
 
-        public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadAllAsync([EnumeratorCancellation] CancellationToken ct = default)
+    public async Task WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
+    {
+        await EnsureConnectedAsync(ct).ConfigureAwait(false);
+        try
         {
-            await EnsureConnectedAsync(ct).ConfigureAwait(false);
-            using var owner = _pool.Rent(_initialBufferSize);
-            var buffer = owner.Memory;
-            int read;
-            while ((read = await Client.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
+            await foreach (var buffer in source.WithCancellation(ct).ConfigureAwait(false))
             {
-                yield return buffer[..read];
+                await Server.WriteAsync(buffer, ct).ConfigureAwait(false);
+                if (ct.IsCancellationRequested) break;
             }
         }
-
-        public async Task WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
+        finally
         {
-            await EnsureConnectedAsync(ct).ConfigureAwait(false);
-            try
-            {
-                await foreach (var buffer in source.WithCancellation(ct).ConfigureAwait(false))
-                {
-                    await Server.WriteAsync(buffer, ct).ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                Server.Disconnect();
-            }
+            Server.Disconnect();
         }
+    }
 
-        private async Task EnsureConnectedAsync(CancellationToken ct)
+    private async Task EnsureConnectedAsync(CancellationToken ct)
+    {
+        if (Interlocked.CompareExchange(ref _connected, 1, 0) == 0)
         {
-            if (Interlocked.CompareExchange(ref _connected, 1, 0) == 0)
-            {
-                var serverConnect = Server.WaitForConnectionAsync(ct);
-                var clientConnect = Client.ConnectAsync(ct);
-                await Task.WhenAll(serverConnect, clientConnect).ConfigureAwait(false);
-            }
+            var serverConnect = Server.WaitForConnectionAsync(ct);
+            var clientConnect = Client.ConnectAsync(ct);
+            await Task.WhenAll(serverConnect, clientConnect).ConfigureAwait(false);
         }
+    }
 
-        public void Dispose()
-        {
-            if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) == 0)
-            {
-                Client.Dispose();
-                Server.Dispose();
-            }
+    public void Dispose()
+    {
+        if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) != 0) return;
+        Client.Dispose();
+        Server.Dispose();
+    }
 
-            GC.SuppressFinalize(this);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) == 0)
-            {
-                await Client.DisposeAsync();
-                await Server.DisposeAsync();
-            }
-
-            GC.SuppressFinalize(this);
-        }
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) != 0) return;
+        await Client.DisposeAsync();
+        await Server.DisposeAsync();
     }
 }
