@@ -1,20 +1,12 @@
-﻿using Azure.Core;
-using BlazorSamples.PlayHT.Protos.V1;
-using FFMpegCore.Pipes;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
+using BlazorSamples.TextToSpeech.PlayHT.Protos.V1;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace BlazorSamples.Shared.TextToSpeech
+namespace BlazorSamples.Shared.Old.TextToSpeech
 {
     public class PlayHTTextToSpeech(IConfiguration configuration, HttpClient authClient) : ITextToSpeech
     {

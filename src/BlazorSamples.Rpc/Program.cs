@@ -1,4 +1,3 @@
-using BlazorSamples.PlayHT.Protos.V1;
 using BlazorSamples.Rpc.Services;
 
 var builder = WebApplication.CreateBuilder(args);

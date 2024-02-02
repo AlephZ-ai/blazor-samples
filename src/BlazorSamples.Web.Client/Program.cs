@@ -5,7 +5,7 @@ using KristofferStrube.Blazor.WebIDL;
 using BlazorFileSaver;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
-using BlazorSamples.PlayHT.Protos.V1;
+using BlazorSamples.TextToSpeech.PlayHT.Protos.V1;
 using Grpc.Net.Client.Web;
 using Grpc.Net.Client;
 using System.Net.Http;

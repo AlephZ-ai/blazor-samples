@@ -40,4 +40,8 @@
 	  </Protobuf>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="TextToSpeech\" />
+	</ItemGroup>
+
 </Project>
