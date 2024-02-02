@@ -38,8 +38,6 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             {
                 yield return buffer[..read];
             }
-
-            Console.Write("Test");
         }
 
         public async ValueTask WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
