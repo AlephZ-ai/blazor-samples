@@ -2,7 +2,7 @@
 using Whisper.net;
 using Whisper.net.Ggml;
 
-namespace BlazorSamples.Shared.SpeechToText
+namespace BlazorSamples.Shared.Old.SpeechToText
 {
     public sealed class WhisperSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {

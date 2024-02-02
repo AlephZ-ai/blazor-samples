@@ -8,7 +8,7 @@ using BlazorSamples.Web;
 using Whisper.net.Ggml;
 using Whisper.net;
 using BlazorSamples.Shared.Clients;
-using BlazorSamples.Shared.SpeechToText;
+using BlazorSamples.Shared.Old.SpeechToText;
 
 Console.WriteLine($"Is64: {Environment.Is64BitProcess}");
 var builder = WebApplication.CreateBuilder(args);

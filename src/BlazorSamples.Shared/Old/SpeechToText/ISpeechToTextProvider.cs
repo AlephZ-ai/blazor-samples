@@ -1,4 +1,4 @@
-﻿namespace BlazorSamples.Shared.SpeechToText
+﻿namespace BlazorSamples.Shared.Old.SpeechToText
 {
     public interface ISpeechToTextProvider
     {

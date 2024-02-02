@@ -61,9 +61,7 @@ await app.RunAsync();
 static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
 {
     var initialBufferSize = 4 * 1024;
-    var jsonOptions = new JsonSerializerOptions
-    {
-    };
+    var jsonOptions = new JsonSerializerOptions();
 
     var receiveLoop = webSocket
         .ReceiveAsyncEnumerable(1024 * 4, ct)

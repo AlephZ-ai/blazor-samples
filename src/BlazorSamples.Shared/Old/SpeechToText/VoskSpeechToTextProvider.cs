@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using Vosk;
 
-namespace BlazorSamples.Shared.SpeechToText
+namespace BlazorSamples.Shared.Old.SpeechToText
 {
     public sealed class VoskSpeechToTextProvider : ISpeechToTextProvider, IDisposable
     {
