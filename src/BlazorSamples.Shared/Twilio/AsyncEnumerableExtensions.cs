@@ -11,7 +11,7 @@ namespace System.Collections.Generic
 {
     public static partial class AsyncEnumerableExtensions
     {
-        public static IAsyncEnumerable<DefaultTwilioProcessorResult?> ProcessEvent(this IAsyncEnumerable<IInboundEvent> input)
+        public static IAsyncEnumerable<DefaultTwilioProcessorResult?> ProcessTwilioEvent(this IAsyncEnumerable<IInboundEvent> input)
         {
             var processor = new DefaultTwilioProcessor();
             return input.Select(processor.ProcessEvent);

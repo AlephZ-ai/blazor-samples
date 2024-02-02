@@ -10,11 +10,11 @@ using FFMpegCore.Enums;
 
 namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
 {
-    public class FfmpegAudioConverter(IOptionsSnapshot<FfmpegAudioConverterOptions> options) : IAudioConverter
+    public class FfmpegAudioConverter(FfmpegAudioConverterOptions options) : IAudioConverter
     {
         public IAsyncEnumerable<ReadOnlyMemory<byte>> ConvertAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
         {
-            var pipes = new BiDirectionalNamedPipes(options.Value.InPipeName, options.Value.OutPipeName, options.Value.InitialBufferSize);
+            var pipes = new BiDirectionalNamedPipes(options.InPipeName, options.OutPipeName, options.InitialBufferSize);
             var ffOptions = new FFOptions();
             var process = ConvertAudioAsync(pipes, ffOptions);
             return pipes.ProcessAllAsync(source, process, ct)
@@ -24,17 +24,17 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
         private Task<bool> ConvertAudioAsync(BiDirectionalNamedPipes pipes, FFOptions ffOptions) =>
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(pipes.In.Client), i => i
-                    .ForceFormat(options.Value.InFormat)
-                    .WithAudioSamplingRate(options.Value.InSampleRate)
+                    .ForceFormat(options.InFormat)
+                    .WithAudioSamplingRate(options.InSampleRate)
                     .WithHardwareAcceleration()
-                    .UsingMultithreading(false))
+                    .UsingMultithreading(options.InMultithreading))
                 .OutputToPipe(new StreamPipeSink(pipes.Out.Server), o => o
-                    .ForceFormat(options.Value.OutFormat)
-                    .WithAudioSamplingRate(options.Value.OutSampleRate)
-                    .WithAudioBitrate(options.Value.OutBitrate)
-                    .WithSpeedPreset(options.Value.OutSpeed)
+                    .ForceFormat(options.OutFormat)
+                    .WithAudioSamplingRate(options.OutSampleRate)
+                    .WithAudioBitrate(options.OutBitrate)
+                    .WithSpeedPreset(options.OutSpeed)
                     .WithFastStart()
-                    .UsingMultithreading(false))
+                    .UsingMultithreading(options.OutMultithreading))
                 .ProcessAsynchronously(true, ffOptions);
     }
 }

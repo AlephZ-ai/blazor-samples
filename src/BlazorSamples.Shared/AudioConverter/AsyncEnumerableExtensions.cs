@@ -10,9 +10,9 @@ namespace System.Collections.Generic
 {
     public static partial class AsyncEnumerableExtensions
     {
-        public static IAsyncEnumerable<ReadOnlyMemory<byte>> ConvertAudioAsync(this IAsyncEnumerable<ReadOnlyMemory<byte>> input, IAudioConverter converter)
+        public static IAsyncEnumerable<ReadOnlyMemory<byte>> ConvertAudioAsync(this IAsyncEnumerable<ReadOnlyMemory<byte>> input, IAudioConverter converter, CancellationToken ct = default)
         {
-            return converter.ConvertAsync(input);
+            return converter.ConvertAsync(input, ct);
         }
     }
 }

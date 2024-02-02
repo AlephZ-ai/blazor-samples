@@ -30,7 +30,7 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
 
         public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReadAllAsync([EnumeratorCancellation] CancellationToken ct = default)
         {
-            await EnsureConnectedAsync().ConfigureAwait(false);
+            await EnsureConnectedAsync(ct).ConfigureAwait(false);
             using var owner = _pool.Rent(_initialBufferSize);
             var buffer = owner.Memory;
             int read;
@@ -40,9 +40,9 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             }
         }
 
-        public async ValueTask WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
+        public async Task WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
         {
-            await EnsureConnectedAsync().ConfigureAwait(false);
+            await EnsureConnectedAsync(ct).ConfigureAwait(false);
             try
             {
                 await foreach (var buffer in source.WithCancellation(ct).ConfigureAwait(false))
@@ -56,7 +56,7 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             }
         }
 
-        private async ValueTask EnsureConnectedAsync(CancellationToken ct = default)
+        private async Task EnsureConnectedAsync(CancellationToken ct)
         {
             if (Interlocked.CompareExchange(ref _connected, 1, 0) == 0)
             {

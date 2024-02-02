@@ -17,18 +17,41 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
         public string OutPipeName => Out.Name;
         private int _disposedValue = 0;
 
-        public IAsyncEnumerable<ReadOnlyMemory<byte>> ProcessAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, Task foreignTask, CancellationToken ct = default)
+        public IAsyncEnumerable<ReadOnlyMemory<byte>> ProcessAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, Task<bool> foreign, CancellationToken ct = default)
         {
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            ct = cts.Token;
+            var cancel = CancelOnFailure(foreign, cts);
             var readAll = Out.ReadAllAsync(ct);
-            var writeAll = DisconnectAfter(In.WriteAllAsync(source, ct), foreignTask);
-            return readAll.Finally(() => writeAll.AsTask());
+            var writeAll = DisconnectAfter(In.WriteAllAsync(source, ct), cancel);
+            return readAll
+                .Finally(() => writeAll);
         }
 
-        private async ValueTask DisconnectAfter(ValueTask previous, Task foreignTask)
+        private async Task CancelOnFailure(Task<bool> foreignTask, CancellationTokenSource cts)
         {
-            await previous.ConfigureAwait(false);
-            await foreignTask.ConfigureAwait(false);
-            Out.Server.Disconnect();
+            try
+            {
+                if (!await foreignTask.ConfigureAwait(false))
+                    cts.Cancel();
+            }
+            catch
+            {
+                cts.Cancel();
+                throw;
+            }
+        }
+
+        private async Task DisconnectAfter(Task previous, Task foreign)
+        {
+            try
+            {
+                await Task.WhenAll(previous, foreign).ConfigureAwait(false);
+            }
+            finally
+            {
+                Out.Server.Disconnect();
+            }
         }
 
         public void Dispose()

@@ -37,13 +37,10 @@ namespace BlazorSamples.Tests
                 InSampleRate = 8000,
                 OutFormat = "wav",
                 OutSampleRate = 16000,
-                OutBitrate = 64,
                 OutSpeed = Speed.VerySlow,
             };
 
-            var mockOptionsSnapshot = new Mock<IOptionsSnapshot<FfmpegAudioConverterOptions>>();
-            mockOptionsSnapshot.Setup(m => m.Value).Returns(options);
-            var converter = new FfmpegAudioConverter(mockOptionsSnapshot.Object);
+            var converter = new FfmpegAudioConverter(options);
             await WriteFileAsync(OUT, converter.ConvertAsync(ReadFileAsync(MULAW, ct)), ct);
         }
 
