@@ -9,7 +9,7 @@
   <ItemGroup>
 	  <PackageReference Include="Aspire.Hosting.Azure" Version="8.0.0-preview.2.23619.3" />
 	  <PackageReference Include="Azure.Identity" Version="1.10.4" />
-	  <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.12" />
+	  <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.13" />
 	  <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.1" />
 	  <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
 	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.1" />

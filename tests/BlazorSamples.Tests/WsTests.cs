@@ -218,13 +218,13 @@ namespace BlazorSamples.Tests
         async Task Echo(WebSocket webSocket, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .Select(r => r.Buffer);
 
             await webSocket
-                .SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);
@@ -237,14 +237,14 @@ namespace BlazorSamples.Tests
         async Task EchoLarge(WebSocket webSocket, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .Select(r => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return r; });
 
             await webSocket
-                .SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);
@@ -257,22 +257,22 @@ namespace BlazorSamples.Tests
         async Task Json(WebSocket webSocket, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReceiveAsyncEnumerable(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
                 .ExcludeEmpty()
-                .ToTFromJsonAsyncEnumerable<JsonTest>()
-                .ToJsonBytesAsyncEnumerable()
-                .ToStringAsyncEnumerable()
-                .ToBytesAsyncEnumerable()
-                .ToTFromJsonAsyncEnumerable<JsonTest>()
-                .ToJsonStringAsyncEnumerable()
+                .ConvertFromJsonAsync<JsonTest>()
+                .ToJsonBytesAsync()
+                .ToStringAsync()
+                .ToBytesAsync()
+                .ConvertFromJsonAsync<JsonTest>()
+                .ToJsonStringAsync()
                 .Select(s => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return s; })
-                .ToBytesAsyncEnumerable();
+                .ToBytesAsync();
 
             await webSocket
-                .SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);

@@ -74,17 +74,17 @@ static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
 
     var audioConverter = new FfmpegAudioConverter(audioConverterOptions);
     var receiveLoop = webSocket
-        .ReceiveAsyncEnumerable(initialBufferSize, ct)
+        .ReadAllAsync(initialBufferSize, ct)
         .RecombineFragmentsAsync(initialBufferSize, ct)
         .ExcludeEmpty()
-        .ToTFromJsonAsyncEnumerable<IInboundEvent>(jsonOptions)
+        .ConvertFromJsonAsync<IInboundEvent>(jsonOptions)
         .ExcludeNull()
         .ProcessTwilioEvent()
         .ExcludeNull()
         .Select(twilio => twilio.Payload)
         .ConvertAudioAsync(audioConverter, ct);
 
-    await webSocket.SendAsyncEnumerable(receiveLoop, WebSocketMessageType.Text, ct)
+    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 

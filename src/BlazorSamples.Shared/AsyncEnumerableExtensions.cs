@@ -14,27 +14,27 @@ namespace System.Collections.Generic
     public static partial class AsyncEnumerableExtensions
     {
         public const int DefaultBufferSize = 4 * 1024;
-        public static IAsyncEnumerable<T?> ToTFromJsonAsyncEnumerable<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
+        public static IAsyncEnumerable<T?> ConvertFromJsonAsync<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
         {
             jsonOptions ??= JsonSerializerOptions.Default;
             return source.Select(json => JsonSerializer.Deserialize<T>(json.Span, jsonOptions));
         }
 
-        public static Utf8JsonBytesAsyncEnumerable ToJsonBytesAsyncEnumerable<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
+        public static Utf8JsonBytesAsyncEnumerable ToJsonBytesAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
         {
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
             return source.Select(ReadOnlyMemory<byte> (obj) => new Memory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions)));
         }
 
-        public static Utf8JsonStringAsyncEnumerable ToJsonStringAsyncEnumerable<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
+        public static Utf8JsonStringAsyncEnumerable ToJsonStringAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
         {
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
             return source.Select(obj => JsonSerializer.Serialize(obj, jsonOptions));
         }
 
-        public static Utf8BytesAsyncEnumerable ToBytesAsyncEnumerable(this Utf8StringAsyncEnumerable source, int initialBufferSize = DefaultBufferSize)
+        public static Utf8BytesAsyncEnumerable ToBytesAsync(this Utf8StringAsyncEnumerable source, int initialBufferSize = DefaultBufferSize)
         {
             var pool = MemoryPool<byte>.Shared;
             var owner = pool.Rent(initialBufferSize);
@@ -53,7 +53,7 @@ namespace System.Collections.Generic
                 });
         }
 
-        public static Utf8StringAsyncEnumerable ToStringAsyncEnumerable(this Utf8BytesAsyncEnumerable source) =>
+        public static Utf8StringAsyncEnumerable ToStringAsync(this Utf8BytesAsyncEnumerable source) =>
             source.Select(buffer => Encoding.UTF8.GetString(buffer.Span));
 
         public static IAsyncEnumerable<ReadOnlyMemory<T>> ExcludeEmpty<T>(this IAsyncEnumerable<ReadOnlyMemory<T>> source) =>

@@ -14,7 +14,7 @@ namespace System.Net.WebSockets
     public static class WebSocketExtensions
     {
         public const int DefaultBufferSize = AsyncEnumerableExtensions.DefaultBufferSize;
-        public static async IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReceiveAsyncEnumerable(
+        public static async IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReadAllAsync(
             this WebSocket webSocket,
             int bufferSize = DefaultBufferSize,
             [EnumeratorCancellation] CancellationToken ct = default)
@@ -31,18 +31,18 @@ namespace System.Net.WebSockets
             }
         }
 
-        public static IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReceiveAsyncEnumerable(
+        public static IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReadAllAsync(
             this WebSocket webSocket,
             CancellationToken ct = default) =>
-        webSocket.ReceiveAsyncEnumerable(DefaultBufferSize, ct);
+        webSocket.ReadAllAsync(DefaultBufferSize, ct);
 
         public static async IAsyncEnumerable<Unit> SendAsyncEnumerable(
             this WebSocket webSocket,
-            IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> enumerable,
+            IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> source,
             WebSocketMessageType messageType = WebSocketMessageType.Text,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
-            await foreach (var message in enumerable.WithCancellation(ct).ConfigureAwait(false))
+            await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
             {
                 if (webSocket.State != WebSocketState.Open) break;
                 await webSocket.SendAsync(message.Buffer, messageType, message.Flags, ct).ConfigureAwait(false);
@@ -50,27 +50,27 @@ namespace System.Net.WebSockets
             }
         }
 
-        public static IAsyncEnumerable<Unit> SendAsyncEnumerable(
+        public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
-            IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> enumerable,
+            IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> source,
             CancellationToken ct = default) =>
-        webSocket.SendAsyncEnumerable(enumerable, WebSocketMessageType.Text, ct);
+        webSocket.SendAsyncEnumerable(source, WebSocketMessageType.Text, ct);
 
-        public static IAsyncEnumerable<Unit> SendAsyncEnumerable(
+        public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
-            IAsyncEnumerable<ReadOnlyMemory<byte>> enumerable,
+            IAsyncEnumerable<ReadOnlyMemory<byte>> source,
             WebSocketMessageType messageType = WebSocketMessageType.Text,
             CancellationToken ct = default) =>
-        webSocket.SendAsyncEnumerable(enumerable.Select(buffer => (WebSocketMessageFlags.EndOfMessage, buffer)), messageType, ct);
+        webSocket.SendAsyncEnumerable(source.Select(buffer => (WebSocketMessageFlags.EndOfMessage, buffer)), messageType, ct);
 
-        public static IAsyncEnumerable<Unit> SendAsyncEnumerable(
+        public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
-            IAsyncEnumerable<ReadOnlyMemory<byte>> enumerable,
+            IAsyncEnumerable<ReadOnlyMemory<byte>> source,
             CancellationToken ct = default) =>
-        webSocket.SendAsyncEnumerable(enumerable, WebSocketMessageType.Text, ct);
+        webSocket.SendAllAsync(source, WebSocketMessageType.Text, ct);
 
         public static async IAsyncEnumerable<ReadOnlyMemory<byte>> RecombineFragmentsAsync(
-            this IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> enumerable,
+            this IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> source,
             int initialBufferSize = DefaultBufferSize,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
@@ -83,7 +83,7 @@ namespace System.Net.WebSockets
             var offset = 0;
             try
             {
-                await foreach (var message in enumerable.WithCancellation(ct).ConfigureAwait(false))
+                await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
                 {
                     AsyncEnumerableExtensions.ResizeBufferIfNeeded(pool, ref owner, ref buffer, offset, message.Buffer.Length);
                     message.Buffer.CopyTo(buffer[offset..]);
