@@ -1,6 +1,4 @@
-﻿using BlazorSamples.Shared.Twilio.GrpcAudioStream;
-using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
-using Google.Protobuf;
+﻿using Google.Protobuf;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Buffers;
 using System.Collections.Generic;
@@ -11,17 +9,11 @@ using Utf8JsonBytesAsyncEnumerable = System.Collections.Generic.IAsyncEnumerable
 using Utf8JsonStringAsyncEnumerable = System.Collections.Generic.IAsyncEnumerable<string?>;
 using Utf8StringAsyncEnumerable = System.Collections.Generic.IAsyncEnumerable<string?>;
 
-namespace BlazorSamples.Ws2
+namespace System.Collections.Generic
 {
-    public static class AsyncEnumerableExtensions
+    public static partial class AsyncEnumerableExtensions
     {
         public const int DefaultBufferSize = 4 * 1024;
-        public static IAsyncEnumerable<DefaultTwilioProcessorResult?> ProcessEvent(this IAsyncEnumerable<IInboundEvent> input)
-        {
-            var processor = new DefaultTwilioProcessor();
-            return input.Select(processor.ProcessEvent);
-        }
-
         public static IAsyncEnumerable<T?> ToTFromJsonAsyncEnumerable<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
         {
             jsonOptions ??= JsonSerializerOptions.Default;

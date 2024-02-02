@@ -27,13 +27,15 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
                 .FromPipeInput(new StreamPipeSource(pipes.In.Client), i => i
                     .ForceFormat(options.Value.InFormat)
                     .WithAudioSamplingRate(options.Value.InSampleRate)
-                    .WithHardwareAcceleration())
+                    .WithHardwareAcceleration()
+                    .UsingMultithreading(false))
                 .OutputToPipe(new StreamPipeSink(pipes.Out.Server), o => o
                     .ForceFormat(options.Value.OutFormat)
                     .WithAudioSamplingRate(options.Value.OutSampleRate)
                     .WithAudioBitrate(options.Value.OutBitrate)
                     .WithSpeedPreset(options.Value.OutSpeed)
-                    .WithFastStart())
+                    .WithFastStart()
+                    .UsingMultithreading(false))
                 .ProcessAsynchronously(true, ffOptions);
     }
 }

@@ -1,4 +1,3 @@
-using BlazorSamples.Ws2;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -14,12 +13,12 @@ using System.Text.Json;
 namespace BlazorSamples.Tests
 {
     [TestClass]
-    public class Ws2Tests
+    public class WsTests
     {
         private static TestContext _context = null!;
         private const string _chars = @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         private static readonly Random _random = new Random(69);
-        private static readonly string _assemblyName = typeof(Ws2Tests).Assembly.GetName().Name!;
+        private static readonly string _assemblyName = typeof(WsTests).Assembly.GetName().Name!;
         private int _serverReceiveCount = 0;
         private int _serverSendCount = 0;
         private int _serverRecombinedReceiveCount = 0;

@@ -9,7 +9,7 @@ using System.Text;
 using WebSocketAsyncEnumerableReceiveMessage = (System.Net.WebSockets.ValueWebSocketReceiveResult Result, System.ReadOnlyMemory<byte> Buffer);
 using WebSocketAsyncEnumerableSendMessage = (System.Net.WebSockets.WebSocketMessageFlags Flags, System.ReadOnlyMemory<byte> Buffer);
 
-namespace BlazorSamples.Ws2
+namespace System.Net.WebSockets
 {
     public static class WebSocketExtensions
     {
