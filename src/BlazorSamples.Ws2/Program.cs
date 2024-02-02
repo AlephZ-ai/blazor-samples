@@ -42,6 +42,11 @@ builder.AddVoskSpeechRecognizer(new VoskSpeechRecognizerOptions
 });
 
 var app = builder.Build();
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var sr = app.Services.GetRequiredService<ISpeechRecognizer>();
+logger.LogInformation("Models downloading");
+await sr.EnsureModelsDownloadedAsync().ConfigureAwait(false);
+logger.LogInformation("Models downloaded");
 app.MapDefaultEndpoints();
 if (!app.Environment.IsDevelopment())
 {
