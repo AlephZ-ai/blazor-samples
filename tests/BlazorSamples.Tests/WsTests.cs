@@ -284,14 +284,14 @@ namespace BlazorSamples.Tests
 
         async ValueTask SendStringAsync(WebSocket webSocket, string message, CancellationToken ct = default)
         {
-            var buffer = new Memory<byte>(Encoding.UTF8.GetBytes(message));
+            var buffer = new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(message));
             await webSocket.SendAsync(buffer, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, ct);
             Interlocked.Increment(ref _clientSendCount);
         }
 
         async ValueTask SendJsonAsync<T>(WebSocket webSocket, T message, CancellationToken ct = default)
         {
-            var buffer = new Memory<byte>(JsonSerializer.SerializeToUtf8Bytes(message));
+            var buffer = new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(message));
             await webSocket.SendAsync(buffer, WebSocketMessageType.Text, WebSocketMessageFlags.EndOfMessage, ct);
             Interlocked.Increment(ref _clientSendCount);
         }

@@ -10,6 +10,7 @@ using BlazorSamples.Shared.ChatCompletion;
 using BlazorSamples.Shared.ChatCompletion.OpenAI;
 using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
+using BlazorSamples.Shared.TextToSpeech;
 
 var initialBufferSize = 4 * 1024;
 var outSampleRate = 16000;
@@ -47,13 +48,18 @@ builder.AddVoskSpeechRecognizer(new()
     PartialWords = false,
 });
 
-var openAIOptions = new OpenAIChatCompleterOptions
+builder.AddAzureOpenAI("openai");
+builder.AddOpenAIChatCompleter(new OpenAIChatCompleterOptions
 {
     SystemMessage = "You are a helpful AI audio voice assistance who answers the phone."
-};
+});
 
-builder.AddAzureOpenAI("openai");
-builder.AddOpenAIChatCompleter(openAIOptions);
+builder.AddPlayHTTextToSpeechGenerator(configuration => new()
+{
+    User = configuration.GetValue<string>("playHT:user")!,
+    Key = configuration.GetValue<string>("playHT:key")!,
+    JsonOptions = jsonOptions,
+});
 
 var app = builder.Build();
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -78,20 +84,21 @@ app.MapGet("/stream", async (
     IAudioConverter audioConverter,
     ISpeechRecognizer speechRecognizer,
     IChatCompleter chatCompleter,
+    ITextToSpeechGenerator ttsGenerator,
     CancellationToken ct) =>
-{
-    if (context.WebSockets.IsWebSocketRequest)
     {
-        using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, chatCompleter, ct).ConfigureAwait(false);
-    }
-    else
-    {
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-    }
-})
-.WithName("Stream")
-.RequireCors();
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
+            await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, chatCompleter, ttsGenerator, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        }
+    })
+    .WithName("Stream")
+    .RequireCors();
 
 
 
@@ -108,6 +115,7 @@ static async Task ProcessAsync(
     IAudioConverter audioConverter,
     ISpeechRecognizer speechRecognizer,
     IChatCompleter chatCompleter,
+    ITextToSpeechGenerator ttsGenerator,
     CancellationToken ct = default)
 {
     var receiveLoop = webSocket
@@ -123,9 +131,10 @@ static async Task ProcessAsync(
         .RecognizeSpeechAsync(speechRecognizer, ct)
         .Where(text => text.IsPauseDetected && !string.IsNullOrEmpty(text.Fragment))
         .Select(text => text.Fragment!)
-        .CompleteChatAsync(chatCompleter, ct);
+        .CompleteChatAsync(chatCompleter, ct)
+        .GenerateSpeechAsync(ttsGenerator, ct);
 
-    await webSocket.SendAllAsync(receiveLoop.ToBytesAsync(initialBufferSize), WebSocketMessageType.Text, ct)
+    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 

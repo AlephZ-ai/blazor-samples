@@ -24,7 +24,7 @@ namespace System.Collections.Generic
         {
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
-            return source.Select(ReadOnlyMemory<byte> (obj) => new Memory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions)));
+            return source.Select(obj => new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions)));
         }
 
         public static Utf8JsonStringAsyncEnumerable ToJsonStringAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
