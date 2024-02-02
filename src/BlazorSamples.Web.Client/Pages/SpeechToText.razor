@@ -128,7 +128,7 @@
 
     public Task ReceiveResult(RegularResult message)
     {
-        this.results.Add(message.text);
+        this.results.Add(message.text!);
         StateHasChanged();
         return Task.CompletedTask;
     }

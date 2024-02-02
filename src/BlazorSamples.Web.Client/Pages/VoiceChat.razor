@@ -84,7 +84,7 @@
     {
         request = message.text;
         StateHasChanged();
-        requestQueue.Writer.TryWrite(message.text);
+        requestQueue.Writer.TryWrite(message.text!);
         return Task.CompletedTask;
     }
 
