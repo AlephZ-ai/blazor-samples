@@ -10,7 +10,6 @@ using Vosk;
 using System.Text;
 using System.Text.Json;
 using BlazorSamples.Shared.Clients;
-using BlazorSamples.Shared.SpeechToText;
 using BlazorSamples.Shared.UI;
 using BlazorSamples.Shared.Old.SpeechToText;
 
