@@ -74,7 +74,7 @@ static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
 
     var audioConverter = new FfmpegAudioConverter(audioConverterOptions);
     var receiveLoop = webSocket
-        .ReceiveAsyncEnumerable(1024 * 4, ct)
+        .ReceiveAsyncEnumerable(initialBufferSize, ct)
         .RecombineFragmentsAsync(initialBufferSize, ct)
         .ExcludeEmpty()
         .ToTFromJsonAsyncEnumerable<IInboundEvent>(jsonOptions)
