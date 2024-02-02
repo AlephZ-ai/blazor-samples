@@ -3,7 +3,7 @@ using Azure.AI.OpenAI;
 
 namespace BlazorSamples.Shared.ChatCompletion.OpenAI;
 
-public sealed class OpenAIChatCompleter(OpenAIChatCompleterOptions options, OpenAIClient openAI) : IChatCompleter
+public sealed class OpenAIChatCompleter(OpenAIChatCompleterOptions options, OpenAIClient client) : IChatCompleter
 {
     public IAsyncEnumerable<string> CompleteAsync(IAsyncEnumerable<string> source, CancellationToken ct = default)
     {
@@ -19,7 +19,7 @@ public sealed class OpenAIChatCompleter(OpenAIChatCompleterOptions options, Open
                 }
             };
 
-            return (await openAI.GetChatCompletionsStreamingAsync(chatCompletionsOptions, ct))
+            return (await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions, ct))
                 .Where(_ => !ct.IsCancellationRequested)
                 .Select(completion => completion.ContentUpdate);
         });
