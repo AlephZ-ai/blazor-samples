@@ -14,7 +14,7 @@ namespace BlazorSamples.Shared.SpeechRecognition.Vosk
         public string Spk { get; init; } = "vosk-model-spk-0.4";
         public int SampleRate { get; init; } = 16000;
         public bool Words { get; init; } = true;
-        public bool PartialWords { get; init; } = true;
+        public bool PartialWords { get; init; } = false;
         public JsonSerializerOptions JsonOptions { get; init; } = JsonSerializerOptions.Default;
     }
 }

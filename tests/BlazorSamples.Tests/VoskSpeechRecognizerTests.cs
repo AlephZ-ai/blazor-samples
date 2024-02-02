@@ -25,7 +25,7 @@ namespace BlazorSamples.Tests
         }
 
         [TestMethod]
-        public async Task RecgonizeSpeechTest()
+        public async Task RecognizeSpeechTest()
         {
             var ct = _context.CancellationTokenSource.Token;
             var options = new VoskSpeechRecognizerOptions
@@ -35,12 +35,18 @@ namespace BlazorSamples.Tests
 
             var recognizer = new VoskSpeechRecognizer(options);
             await recognizer.EnsureModelsDownloadedAsync(ct);
+            var results = new List<string>();
             await foreach (var text in recognizer.RecognizeAsync(ReadFileAsync(WAV, ct), ct).WithCancellation(ct))
             {
-                if (!string.IsNullOrEmpty(text?.Fragment))
-                    Console.WriteLine(text.Fragment);
+                if (!string.IsNullOrEmpty(text?.Fragment) && text.IsPauseDetected)
+                {
+                    _context.WriteLine(text.Fragment);
+                    results.Add(text.Fragment);
+                }
             }
 
+            Assert.IsTrue(results.Any());
+            Assert.IsFalse(string.IsNullOrEmpty(results[0]));
             recognizer.Dispose();
         }
 
