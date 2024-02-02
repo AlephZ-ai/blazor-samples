@@ -63,6 +63,7 @@ builder.AddPlayHTTextToSpeechGenerator(configuration => new()
     Format = Format.Mulaw,
     SampleRate = 8000,
     Temperature = 1.2f,
+    Speed = 1.2f,
     Quality = Quality.Draft,
     Voice = "s3://mockingbird-prod/susan_vo_training_46ffcc60-d630-42f6-acfe-4affd003ae7a/voices/speaker/manifest.json",
 });
