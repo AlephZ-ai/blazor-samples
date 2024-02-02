@@ -21,6 +21,15 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.AddFfmpegAudioConverter(new FfmpegAudioConverterOptions
+{
+    InFormat = "mulaw",
+    InSampleRate = 8000,
+    OutFormat = "wav",
+    OutSampleRate = 16000,
+    OutSpeed = Speed.VeryFast,
+});
+
 var app = builder.Build();
 app.MapDefaultEndpoints();
 if (!app.Environment.IsDevelopment())
