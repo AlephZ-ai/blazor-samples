@@ -6,7 +6,6 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using BlazorSamples.Shared.PlayHT;
 using BlazorSamples.TextToSpeech.PlayHT.Protos.V1;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
