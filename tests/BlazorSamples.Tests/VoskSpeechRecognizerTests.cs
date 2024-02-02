@@ -47,6 +47,9 @@ namespace BlazorSamples.Tests
 
             Assert.IsTrue(results.Any());
             Assert.IsFalse(string.IsNullOrEmpty(results[0]));
+            Assert.AreEqual("when mice are kept at high population densities their behavior changes in a number of ways aggressive activity within populations of mice rises as density increases cannibalism of young also goes up and so does aberrant sexual activity communal nesting frequent in natural mouse populations", results[0]);
+            Assert.AreEqual("increases abnormally", results[1]);
+            Assert.AreEqual("in one example fifty eight mice one to three days old from several litters were found in one nest most unusual communal living none survived because most of the mothers deserted them immediately after birth", results[2]);
             recognizer.Dispose();
         }
 
