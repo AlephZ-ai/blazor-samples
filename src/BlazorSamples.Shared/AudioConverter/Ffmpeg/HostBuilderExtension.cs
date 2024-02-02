@@ -14,7 +14,8 @@ namespace Microsoft.Extensions.Hosting
     {
         public static IHostApplicationBuilder AddFfmpegAudioConverter(this IHostApplicationBuilder builder, FfmpegAudioConverterOptions options)
         {
-            builder.Services.AddSingleton<IAudioConverter>(sp => new FfmpegAudioConverter(options));
+            builder.Services.AddSingleton(options);
+            builder.Services.AddSingleton<IAudioConverter, FfmpegAudioConverter>();
             return builder;
         }
     }

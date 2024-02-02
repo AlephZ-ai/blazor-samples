@@ -14,7 +14,8 @@ namespace Microsoft.Extensions.Hosting
     {
         public static IHostApplicationBuilder AddVoskSpeechRecognizer(this IHostApplicationBuilder builder, VoskSpeechRecognizerOptions options)
         {
-            builder.Services.AddSingleton<ISpeechRecognizer>(sp => new VoskSpeechRecognizer(options));
+            builder.Services.AddSingleton(options);
+            builder.Services.AddSingleton<ISpeechRecognizer, VoskSpeechRecognizer>();
             return builder;
         }
     }

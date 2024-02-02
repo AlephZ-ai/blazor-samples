@@ -11,6 +11,7 @@ using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
 
 var initialBufferSize = 4 * 1024;
+var outSampleRate = 16000;
 var jsonOptions = JsonSerializerOptions.Default;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,8 +28,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-var outSampleRate = 16000;
-builder.AddFfmpegAudioConverter(new FfmpegAudioConverterOptions
+builder.AddFfmpegAudioConverter(new()
 {
     InitialBufferSize = initialBufferSize,
     InFormat = "mulaw",
@@ -38,10 +38,17 @@ builder.AddFfmpegAudioConverter(new FfmpegAudioConverterOptions
     OutSpeed = Speed.VeryFast,
 });
 
-builder.AddVoskSpeechRecognizer(new VoskSpeechRecognizerOptions
+builder.AddVoskSpeechRecognizer(new()
 {
     JsonOptions = jsonOptions,
     SampleRate = outSampleRate,
+    Words = true,
+    PartialWords = false,
+});
+
+builder.AddOpenAIChatCompleter(new()
+{
+
 });
 
 var app = builder.Build();
