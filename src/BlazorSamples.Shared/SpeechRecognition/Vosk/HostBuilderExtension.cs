@@ -1,5 +1,5 @@
-﻿using BlazorSamples.Shared.AudioConverter;
-using BlazorSamples.Shared.AudioConverter.Ffmpeg;
+﻿using BlazorSamples.Shared.SpeechRecognition;
+using BlazorSamples.Shared.SpeechRecognition.Vosk;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -12,9 +12,9 @@ namespace Microsoft.Extensions.Hosting
 {
     public static partial class HostBuilderExtension
     {
-        public static IHostApplicationBuilder AddFfmpegAudioConverter(this IHostApplicationBuilder builder, FfmpegAudioConverterOptions options)
+        public static IHostApplicationBuilder AddVoskSpeechRecognizer(this IHostApplicationBuilder builder, VoskSpeechRecognizerOptions options)
         {
-            builder.Services.AddSingleton<IAudioConverter>(sp => new FfmpegAudioConverter(options));
+            builder.Services.AddSingleton<ISpeechRecognizer>(sp => new VoskSpeechRecognizer(options));
             return builder;
         }
     }

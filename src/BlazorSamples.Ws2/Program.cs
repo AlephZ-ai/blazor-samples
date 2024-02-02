@@ -5,7 +5,12 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using BlazorSamples.Shared.AudioConverter.Ffmpeg;
 using FFMpegCore.Enums;
+using BlazorSamples.Shared.AudioConverter;
+using BlazorSamples.Shared.SpeechRecognition;
+using BlazorSamples.Shared.SpeechRecognition.Vosk;
 
+var initialBufferSize = 4 * 1024;
+var jsonOptions = JsonSerializerOptions.Default;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
@@ -23,11 +28,17 @@ builder.Services.AddCors(options =>
 
 builder.AddFfmpegAudioConverter(new FfmpegAudioConverterOptions
 {
+    InitialBufferSize = initialBufferSize,
     InFormat = "mulaw",
     InSampleRate = 8000,
     OutFormat = "wav",
     OutSampleRate = 16000,
     OutSpeed = Speed.VeryFast,
+});
+
+builder.AddVoskSpeechRecognizer(new VoskSpeechRecognizerOptions
+{
+    JsonOptions = jsonOptions,
 });
 
 var app = builder.Build();
@@ -45,12 +56,14 @@ app.UseWebSockets();
 app.MapGet("/", () => @"[""Hello World!""]");
 app.MapGet("/stream", async (
     HttpContext context,
+    IAudioConverter audioConverter,
+    ISpeechRecognizer speechRecognizer,
     CancellationToken ct) =>
 {
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-        await EchoJson(webSocket, ct).ConfigureAwait(false);
+        await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, ct).ConfigureAwait(false);
     }
     else
     {
@@ -68,20 +81,14 @@ await app.RunAsync();
 
 
 
-static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
+static async Task ProcessAsync(
+    WebSocket webSocket,
+    int initialBufferSize,
+    JsonSerializerOptions jsonOptions,
+    IAudioConverter audioConverter,
+    ISpeechRecognizer speechRecognizer,
+    CancellationToken ct = default)
 {
-    var initialBufferSize = 4 * 1024;
-    var jsonOptions = new JsonSerializerOptions();
-    var audioConverterOptions = new FfmpegAudioConverterOptions
-    {
-        InFormat = "mulaw",
-        InSampleRate = 8000,
-        OutFormat = "wav",
-        OutSampleRate = 16000,
-        OutSpeed = Speed.VeryFast,
-    };
-
-    var audioConverter = new FfmpegAudioConverter(audioConverterOptions);
     var receiveLoop = webSocket
         .ReadAllAsync(initialBufferSize, ct)
         .RecombineFragmentsAsync(initialBufferSize, ct)
@@ -91,9 +98,10 @@ static async Task EchoJson(WebSocket webSocket, CancellationToken ct = default)
         .ProcessTwilioEvent()
         .ExcludeNull()
         .Select(twilio => twilio.Payload)
-        .ConvertAudioAsync(audioConverter, ct);
+        .ConvertAudioAsync(audioConverter, ct)
+        .RecognizeSpeechAsync(speechRecognizer, ct);
 
-    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
+    await webSocket.SendAllAsync(receiveLoop.ToJsonBytesAsync(jsonOptions), WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 
