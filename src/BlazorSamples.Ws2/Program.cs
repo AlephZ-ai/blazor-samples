@@ -52,7 +52,7 @@ var openAIOptions = new OpenAIChatCompleterOptions
     SystemMessage = "You are a helpful AI audio voice assistance who answers the phone."
 };
 
-builder.AddAzureOpenAI(openAIOptions.ConnectionName);
+builder.AddAzureOpenAI("openai");
 builder.AddOpenAIChatCompleter(openAIOptions);
 
 var app = builder.Build();
