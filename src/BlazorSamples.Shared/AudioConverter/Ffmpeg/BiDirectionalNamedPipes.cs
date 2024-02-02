@@ -17,11 +17,18 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
         public string OutPipeName => Out.Name;
         private int _disposedValue = 0;
 
-        public IAsyncEnumerable<ReadOnlyMemory<byte>> ProcessAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
+        public IAsyncEnumerable<ReadOnlyMemory<byte>> ProcessAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, Task foreignTask, CancellationToken ct = default)
         {
             var readAll = Out.ReadAllAsync(ct);
-            var writeAll = In.WriteAllAsync(source, ct);
+            var writeAll = DisconnectAfter(In.WriteAllAsync(source, ct), foreignTask);
             return readAll.Finally(() => writeAll.AsTask());
+        }
+
+        private async ValueTask DisconnectAfter(ValueTask previous, Task foreignTask)
+        {
+            await previous.ConfigureAwait(false);
+            await foreignTask.ConfigureAwait(false);
+            Out.Server.Disconnect();
         }
 
         public void Dispose()

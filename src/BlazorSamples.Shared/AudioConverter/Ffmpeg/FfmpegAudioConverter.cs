@@ -17,12 +17,11 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             var pipes = new BiDirectionalNamedPipes(options.Value.InPipeName, options.Value.OutPipeName, options.Value.InitialBufferSize);
             var ffOptions = new FFOptions();
             var process = ConvertAudioAsync(pipes, ffOptions);
-            return pipes.ProcessAllAsync(source, ct)
-                .Finally(() => pipes.DisposeAsync().AsTask())
-                .Finally(() => process);
+            return pipes.ProcessAllAsync(source, process, ct)
+                .Finally(() => pipes.DisposeAsync().AsTask());
         }
 
-        private Task ConvertAudioAsync(BiDirectionalNamedPipes pipes, FFOptions ffOptions) =>
+        private Task<bool> ConvertAudioAsync(BiDirectionalNamedPipes pipes, FFOptions ffOptions) =>
             FFMpegArguments
                 .FromPipeInput(new StreamPipeSource(pipes.In.Client), i => i
                     .ForceFormat(options.Value.InFormat)

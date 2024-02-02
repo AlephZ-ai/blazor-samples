@@ -38,14 +38,23 @@ namespace BlazorSamples.Shared.AudioConverter.Ffmpeg
             {
                 yield return buffer[..read];
             }
+
+            Console.Write("Test");
         }
 
         public async ValueTask WriteAllAsync(IAsyncEnumerable<ReadOnlyMemory<byte>> source, CancellationToken ct = default)
         {
             await EnsureConnectedAsync().ConfigureAwait(false);
-            await foreach (var buffer in source.WithCancellation(ct).ConfigureAwait(false))
+            try
             {
-                await Client.WriteAsync(buffer, ct).ConfigureAwait(false);
+                await foreach (var buffer in source.WithCancellation(ct).ConfigureAwait(false))
+                {
+                    await Server.WriteAsync(buffer, ct).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                Server.Disconnect();
             }
         }
 
