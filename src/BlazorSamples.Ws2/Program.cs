@@ -27,19 +27,21 @@ builder.Services.AddCors(options =>
     });
 });
 
+var outSampleRate = 16000;
 builder.AddFfmpegAudioConverter(new FfmpegAudioConverterOptions
 {
     InitialBufferSize = initialBufferSize,
     InFormat = "mulaw",
     InSampleRate = 8000,
     OutFormat = "wav",
-    OutSampleRate = 16000,
+    OutSampleRate = outSampleRate,
     OutSpeed = Speed.VeryFast,
 });
 
 builder.AddVoskSpeechRecognizer(new VoskSpeechRecognizerOptions
 {
     JsonOptions = jsonOptions,
+    SampleRate = outSampleRate,
 });
 
 var app = builder.Build();
