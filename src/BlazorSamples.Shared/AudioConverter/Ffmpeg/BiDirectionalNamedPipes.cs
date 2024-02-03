@@ -68,7 +68,7 @@ internal sealed class BiDirectionalNamedPipes(
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) != 0) return;
-        await In.DisposeAsync();
-        await Out.DisposeAsync();
+        await In.DisposeAsync().ConfigureAwait(false);
+        await Out.DisposeAsync().ConfigureAwait(false);
     }
 }

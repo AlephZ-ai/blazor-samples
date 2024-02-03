@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Utf8BytesAsyncEnumerable = System.Collections.Generic.IAsyncEnumerable<System.ReadOnlyMemory<byte>>;
@@ -14,6 +15,35 @@ namespace System.Collections.Generic
     public static partial class AsyncEnumerableExtensions
     {
         public const int DefaultBufferSize = 4 * 1024;
+
+        public static async IAsyncEnumerable<string> DetectSentenceSimple(this IAsyncEnumerable<string> source, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            var sentence = string.Empty;
+            await foreach (var partial in source.WithCancellation(ct).ConfigureAwait(false))
+            {
+                sentence += partial ?? string.Empty;
+                if (DetectSentenceSimple(ref sentence, out var leftOver))
+                {
+                    yield return sentence;
+                    sentence = leftOver;
+                }
+            }
+        }
+        
+        private static bool DetectSentenceSimple(ref string sentence, out string leftOver)
+        {
+            if (sentence.Contains('.') || sentence.Contains('!') || sentence.Contains('?'))
+            {
+                var split = sentence.Split(new[] { '.', '!', '?' }, 2);
+                sentence = split[0].Trim();
+                leftOver = split[1] ?? string.Empty;
+                return true;
+            }
+
+            leftOver = string.Empty;
+            return false;
+        }
+
         public static IAsyncEnumerable<T?> ConvertFromJsonAsync<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
         {
             jsonOptions ??= JsonSerializerOptions.Default;

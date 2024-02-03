@@ -79,7 +79,7 @@ internal sealed class NamedPipe : IAsyncDisposable, IDisposable
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.CompareExchange(ref _disposedValue, 1, 0) != 0) return;
-        await Client.DisposeAsync();
-        await Server.DisposeAsync();
+        await Client.DisposeAsync().ConfigureAwait(false);
+        await Server.DisposeAsync().ConfigureAwait(false);
     }
 }
