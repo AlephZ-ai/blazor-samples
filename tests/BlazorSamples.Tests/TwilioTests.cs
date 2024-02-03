@@ -151,7 +151,7 @@ namespace BlazorSamples.Tests
         T PolymorphismTest<T>(IInboundEvent input)
         {
             var json = JsonSerializer.Serialize(input, _options);
-            var output = JsonSerializer.Deserialize<IInboundEvent>(json,_options);
+            var output = JsonSerializer.Deserialize<IInboundEvent>(json, _options);
             input.ShouldCompare(output);
             return (T)output!;
         }

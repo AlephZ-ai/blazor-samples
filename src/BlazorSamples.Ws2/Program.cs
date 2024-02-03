@@ -12,6 +12,8 @@ using BlazorSamples.Shared.SpeechRecognition;
 using BlazorSamples.Shared.SpeechRecognition.Vosk;
 using BlazorSamples.Shared.TextToSpeech;
 using BlazorSamples.TextToSpeech.PlayHT.Protos.V1;
+using Twilio.AspNet.Core;
+using Twilio.TwiML;
 
 var initialBufferSize = 4 * 1024;
 var outSampleRate = 16000;
@@ -86,6 +88,15 @@ app.UseForwardedHeaders();
 app.UseCors();
 app.UseWebSockets();
 app.MapGet("/", () => @"[""Hello World!""]");
+app.MapPost("/voice", TwiMLResult (HttpRequest request) =>
+{
+    var response = new VoiceResponse();
+    var connect = new Twilio.TwiML.Voice.Connect();
+    connect.Stream(url: $"wss://{request.Host}/stream");
+    response.Append(connect);
+    return response.ToTwiMLResult();
+});
+
 app.MapGet("/stream", async (
     HttpContext context,
     IAudioConverter audioConverter,
