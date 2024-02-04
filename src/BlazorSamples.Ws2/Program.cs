@@ -139,8 +139,8 @@ static async Task ProcessAsync(
     CancellationToken ct = default)
 {
     var receiveLoop = webSocket
-        .ReadAllAsync(initialBufferSize, log, ct)
-        .RecombineFragmentsAsync(initialBufferSize, log, ct)
+        .ReadAllAsync(log, initialBufferSize, ct)
+        .RecombineFragmentsAsync(log, initialBufferSize, ct)
         .ExcludeEmpty()
         .ConvertFromJsonAsync<InboundEvent>(jsonOptions)
         .ExcludeNull()
@@ -155,7 +155,7 @@ static async Task ProcessAsync(
         .DetectSentenceSimple(ct)
         .GenerateSpeechAsync(ttsGenerator, ct);
 
-    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, log, ct)
+    await webSocket.SendAllAsync(receiveLoop, log, WebSocketMessageType.Text, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 
