@@ -142,7 +142,7 @@ static async Task ProcessAsync(
         .ReadAllAsync(log, initialBufferSize, ct)
         .RecombineFragmentsAsync(log, initialBufferSize, ct)
         .ExcludeEmpty()
-        .ConvertFromJsonAsync<InboundEvent>(jsonOptions)
+        .ConvertFromJsonAsync<InboundEvent>(log, jsonOptions)
         .ExcludeNull()
         .ProcessTwilioEvent()
         .ExcludeNull()

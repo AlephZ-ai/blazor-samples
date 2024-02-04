@@ -63,10 +63,26 @@ namespace System.Collections.Generic
             return false;
         }
 
-        public static IAsyncEnumerable<T?> ConvertFromJsonAsync<T>(this Utf8BytesAsyncEnumerable source, JsonSerializerOptions? jsonOptions = null)
+        public static IAsyncEnumerable<T?> ConvertFromJsonAsync<T>(this Utf8BytesAsyncEnumerable source, ILogger log, JsonSerializerOptions? jsonOptions = null)
         {
+            log.Enter();
             jsonOptions ??= JsonSerializerOptions.Default;
-            return source.Select(json => JsonSerializer.Deserialize<T>(json.Span, jsonOptions));
+            return source
+                .Select(x => { log.Loop(); return x; })
+                .Select(json =>
+                {
+                    try
+                    {
+                        return JsonSerializer.Deserialize<T>(json.Span, jsonOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Exception(ex);
+                        throw;
+                    }
+                })
+                .Select(x => { log.Yield(); return x; })
+                .Finally(() => log.Exit());
         }
 
         public static Utf8JsonBytesAsyncEnumerable ToJsonBytesAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)

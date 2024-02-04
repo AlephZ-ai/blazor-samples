@@ -265,11 +265,11 @@ namespace BlazorSamples.Tests
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(log, TestWebSocketServer.DefaultBufferSize, ct)
                 .ExcludeEmpty()
-                .ConvertFromJsonAsync<JsonTest>()
+                .ConvertFromJsonAsync<JsonTest>(log)
                 .ToJsonBytesAsync()
                 .ToStringAsync()
                 .ToBytesAsync(log)
-                .ConvertFromJsonAsync<JsonTest>()
+                .ConvertFromJsonAsync<JsonTest>(log)
                 .ToJsonStringAsync()
                 .Select(s => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return s; })
                 .ToBytesAsync(log);
