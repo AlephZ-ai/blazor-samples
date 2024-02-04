@@ -243,7 +243,7 @@ namespace BlazorSamples.Tests
                 .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
-                .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Select(r => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return r; });
 
             await webSocket
@@ -263,7 +263,7 @@ namespace BlazorSamples.Tests
                 .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
-                .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .ExcludeEmpty()
                 .ConvertFromJsonAsync<JsonTest>()
                 .ToJsonBytesAsync()

@@ -33,6 +33,7 @@ namespace System.Net.WebSockets
                 log?.LogAwait();
                 result = await webSocket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
                 log?.LogReceive();
+                log?.LogYield();
                 yield return (result, buffer[..result.Count]);
             }
 
@@ -59,6 +60,7 @@ namespace System.Net.WebSockets
                 log?.LogAwait();
                 await webSocket.SendAsync(message.Buffer, messageType, message.Flags, ct).ConfigureAwait(false);
                 log?.LogReceive();
+                log?.LogYield();
                 yield return Unit.Default;
             }
             
@@ -90,8 +92,10 @@ namespace System.Net.WebSockets
         public static async IAsyncEnumerable<ReadOnlyMemory<byte>> RecombineFragmentsAsync(
             this IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> source,
             int initialBufferSize = DefaultBufferSize,
+            ILogger? log = null,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
+            log?.LogEnter();
             // TODO: This is a naive implementation that will rent a new even if no resize is needed.
             // Only rent a new buffer on first need, when a message is larger than the current buffer.
             // Set a maximum buffer size and throw an exception if the message is larger than the maximum to avoid a DOS attack.
@@ -101,13 +105,16 @@ namespace System.Net.WebSockets
             var offset = 0;
             try
             {
+                source = source.Select(i => { log?.LogAwait(); return i; });
                 await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
                 {
+                    log?.LogReceive();
                     AsyncEnumerableExtensions.ResizeBufferIfNeeded(pool, ref owner, ref buffer, offset, message.Buffer.Length);
                     message.Buffer.CopyTo(buffer[offset..]);
                     offset += message.Buffer.Length;
                     if (message.Result.EndOfMessage)
                     {
+                        log?.LogYield();
                         yield return buffer[..offset];
                         offset = 0;
                     }

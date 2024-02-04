@@ -13,6 +13,8 @@ public static partial class LoggerMessageDefinitions
     public static partial void LogExit(this ILogger log, [CallerMemberName] string callingMember = "", [CallerLineNumber] int callingLine = 0, [CallerFilePath] string callingFile = "");
     [LoggerMessage(EventId = 42003, Level = LogLevel.Debug, Message = "Await   - Member: {callingMember}, Line: {callingLine}, File: {callingFile}")]
     public static partial void LogAwait(this ILogger log, [CallerMemberName] string callingMember = "", [CallerLineNumber] int callingLine = 0, [CallerFilePath] string callingFile = "");
-    [LoggerMessage(EventId = 42004, Level = LogLevel.Debug, Message = "Receive - Member: {callingMember}, Line: {callingLine}, File: {callingFile}")]
+    [LoggerMessage(EventId = 42004, Level = LogLevel.Debug, Message = "Yield   - Member: {callingMember}, Line: {callingLine}, File: {callingFile}")]
+    public static partial void LogYield(this ILogger log, [CallerMemberName] string callingMember = "", [CallerLineNumber] int callingLine = 0, [CallerFilePath] string callingFile = "");
+    [LoggerMessage(EventId = 42005, Level = LogLevel.Debug, Message = "Receive - Member: {callingMember}, Line: {callingLine}, File: {callingFile}")]
     public static partial void LogReceive(this ILogger log, [CallerMemberName] string callingMember = "", [CallerLineNumber] int callingLine = 0, [CallerFilePath] string callingFile = "");
 }

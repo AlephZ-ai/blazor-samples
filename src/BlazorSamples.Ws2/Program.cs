@@ -140,7 +140,7 @@ static async Task ProcessAsync(
 {
     var receiveLoop = webSocket
         .ReadAllAsync(initialBufferSize, log, ct)
-        .RecombineFragmentsAsync(initialBufferSize, ct)
+        .RecombineFragmentsAsync(initialBufferSize, log, ct)
         .ExcludeEmpty()
         .ConvertFromJsonAsync<InboundEvent>(jsonOptions)
         .ExcludeNull()
