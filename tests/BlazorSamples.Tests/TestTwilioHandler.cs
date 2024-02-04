@@ -14,11 +14,11 @@ namespace BlazorSamples.Tests
 {
     internal sealed class TestTwilioHandler : IInboundEventProcessor<string?>
     {
-        public string? Handle(InboundConnectedEvent connectedEvent) => connectedEvent.EventType;
-        public string? Handle(InboundStartEvent startEvent) => startEvent.EventType;
-        public string? Handle(InboundMediaEvent mediaEvent) => mediaEvent.EventType;
-        public string? Handle(InboundStopEvent stopEvent) => stopEvent.EventType;
-        public string? Handle(InboundMarkEvent markEvent) => markEvent.EventType;
-        public string? ProcessEvent(IInboundEvent inboundEvent) => IInboundEventProcessor<string?>.DefaultProcessEvent(this, inboundEvent);
+        public string? Handle(InboundConnectedEvent connectedEvent) => connectedEvent.GetType().Name;
+        public string? Handle(InboundStartEvent startEvent) => startEvent.GetType().Name;
+        public string? Handle(InboundMediaEvent mediaEvent) => mediaEvent.GetType().Name;
+        public string? Handle(InboundStopEvent stopEvent) => stopEvent.GetType().Name;
+        public string? Handle(InboundMarkEvent markEvent) => markEvent.GetType().Name;
+        public string? ProcessEvent(InboundEvent inboundEvent) => IInboundEventProcessor<string?>.DefaultProcessEvent(this, inboundEvent);
     }
 }

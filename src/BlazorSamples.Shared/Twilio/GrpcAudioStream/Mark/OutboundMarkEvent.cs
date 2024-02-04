@@ -9,18 +9,20 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Mark
 {
-    public class OutboundMarkEvent : StreamSidEvent, IOutboundEvent
+    public class OutboundMarkEvent : OutboundEvent, IStreamSidEvent
     {
         public const string EVENT_TYPE = "mark";
         public const string MARK = EVENT_TYPE;
 
+        [Required]
+        [JsonPropertyName(IStreamSidEvent.STREAM_SID)]
+        public required string StreamSid { get; init; }
 
         [Required]
         [JsonPropertyName(MARK)]
         public required SharedMark Mark { get; init; }
         public OutboundMarkEvent()
         {
-            EventType = EVENT_TYPE;
             Direction = EventDirection.Outbound;
         }
     }

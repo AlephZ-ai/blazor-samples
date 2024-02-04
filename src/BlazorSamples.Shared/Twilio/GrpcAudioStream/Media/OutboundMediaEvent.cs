@@ -9,17 +9,20 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Media
 {
-    public class OutboundMediaEvent : StreamSidEvent, IOutboundEvent
+    public class OutboundMediaEvent : OutboundEvent, IStreamSidEvent
     {
         public const string EVENT_TYPE = Abstractions.Media.EVENT_TYPE;
         public const string MEDIA = EVENT_TYPE;
+
+        [Required]
+        [JsonPropertyName(IStreamSidEvent.STREAM_SID)]
+        public required string StreamSid { get; init; }
 
         [Required]
         [JsonPropertyName(MEDIA)]
         public required OutboundMedia Media { get; init; }
         public OutboundMediaEvent()
         {
-            EventType = EVENT_TYPE;
             Direction = EventDirection.Outbound;
         }
     }

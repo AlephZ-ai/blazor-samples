@@ -9,6 +9,7 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorSamples.Tests
 {
@@ -215,10 +216,10 @@ namespace BlazorSamples.Tests
             Assert.AreEqual(numClients * connects, _serverCloseCount);
         }
 
-        async Task Echo(WebSocket webSocket, CancellationToken ct = default)
+        async Task Echo(WebSocket webSocket, ILogger log, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .Select(r => r.Buffer);
@@ -234,10 +235,10 @@ namespace BlazorSamples.Tests
             Interlocked.Increment(ref _serverCloseCount);
         }
 
-        async Task EchoLarge(WebSocket webSocket, CancellationToken ct = default)
+        async Task EchoLarge(WebSocket webSocket, ILogger log, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)
@@ -254,10 +255,10 @@ namespace BlazorSamples.Tests
             Interlocked.Increment(ref _serverCloseCount);
         }
 
-        async Task Json(WebSocket webSocket, CancellationToken ct = default)
+        async Task Json(WebSocket webSocket, ILogger log, CancellationToken ct = default)
         {
             var receiveLoop = webSocket
-                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, ct)
+                .ReadAllAsync(TestWebSocketServer.DefaultBufferSize, log, ct)
                 .Where(r => r.Result.MessageType != WebSocketMessageType.Close)
                 .Select(r => { Interlocked.Increment(ref _serverReceiveCount); return r; })
                 .RecombineFragmentsAsync(TestWebSocketServer.DefaultBufferSize, ct)

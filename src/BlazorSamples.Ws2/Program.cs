@@ -99,6 +99,7 @@ app.MapPost("/voice", TwiMLResult (HttpRequest request) =>
 
 app.MapGet("/stream", async (
     HttpContext context,
+    ILogger<Program> log,
     IAudioConverter audioConverter,
     ISpeechRecognizer speechRecognizer,
     IChatCompleter chatCompleter,
@@ -108,7 +109,7 @@ app.MapGet("/stream", async (
         if (context.WebSockets.IsWebSocketRequest)
         {
             using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-            await ProcessAsync(webSocket, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, chatCompleter, ttsGenerator, ct).ConfigureAwait(false);
+            await ProcessAsync(webSocket, log, initialBufferSize, jsonOptions, audioConverter, speechRecognizer, chatCompleter, ttsGenerator, ct).ConfigureAwait(false);
         }
         else
         {
@@ -128,6 +129,7 @@ await app.RunAsync();
 
 static async Task ProcessAsync(
     WebSocket webSocket,
+    ILogger log,
     int initialBufferSize,
     JsonSerializerOptions jsonOptions,
     IAudioConverter audioConverter,
@@ -137,10 +139,10 @@ static async Task ProcessAsync(
     CancellationToken ct = default)
 {
     var receiveLoop = webSocket
-        .ReadAllAsync(initialBufferSize, ct)
+        .ReadAllAsync(initialBufferSize, log, ct)
         .RecombineFragmentsAsync(initialBufferSize, ct)
         .ExcludeEmpty()
-        .ConvertFromJsonAsync<IInboundEvent>(jsonOptions)
+        .ConvertFromJsonAsync<InboundEvent>(jsonOptions)
         .ExcludeNull()
         .ProcessTwilioEvent()
         .ExcludeNull()
@@ -150,6 +152,7 @@ static async Task ProcessAsync(
         .Where(text => text.IsPauseDetected && !string.IsNullOrEmpty(text.Fragment))
         .Select(text => text.Fragment!)
         .CompleteChatAsync(chatCompleter, ct)
+        .DetectSentenceSimple(ct)
         .GenerateSpeechAsync(ttsGenerator, ct);
 
     await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)

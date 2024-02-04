@@ -34,7 +34,7 @@ namespace BlazorSamples.Shared.Old.TextToSpeech
                     SampleRate = 8000,
                     Temperature = 1.5f,
                     Quality = Quality.Medium,
-                    Speed = 1.2f
+                    Speed = 1.0f
                 }
             };
 

@@ -15,7 +15,7 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream
     public class DefaultTwilioProcessor : IInboundEventProcessor<DefaultTwilioProcessorResult?>
     {
         private DefaultTwilioProcessorResult? _previous;
-        public DefaultTwilioProcessorResult? ProcessEvent(IInboundEvent inboundEvent) => IInboundEventProcessor<DefaultTwilioProcessorResult?>.DefaultProcessEvent(this, inboundEvent);
+        public DefaultTwilioProcessorResult? ProcessEvent(InboundEvent inboundEvent) => IInboundEventProcessor<DefaultTwilioProcessorResult?>.DefaultProcessEvent(this, inboundEvent);
         DefaultTwilioProcessorResult? IInboundEventProcessor<DefaultTwilioProcessorResult?>.Handle(InboundConnectedEvent connectedEvent) => DefaultTwilioProcessorResult.From(connectedEvent);
         DefaultTwilioProcessorResult? IInboundEventProcessor<DefaultTwilioProcessorResult?>.Handle(InboundStartEvent startEvent) => _previous = DefaultTwilioProcessorResult.From(startEvent);
         DefaultTwilioProcessorResult? IInboundEventProcessor<DefaultTwilioProcessorResult?>.Handle(InboundMediaEvent mediaEvent) => DefaultTwilioProcessorResult.From(_previous!, mediaEvent);

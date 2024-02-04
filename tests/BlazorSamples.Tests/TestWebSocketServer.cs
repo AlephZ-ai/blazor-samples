@@ -7,12 +7,13 @@ using System.Net.WebSockets;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorSamples.Tests
 {
     public class TestWebSocketServer
     {
-        public static Func<WebSocket, CancellationToken, Task> WebSocketFunction { get; set; } = Echo;
+        public static Func<WebSocket, ILogger, CancellationToken, Task> WebSocketFunction { get; set; } = Echo;
         public static int DefaultBufferSize { get; set; } = 4 * 1024;
         public static string Path { get; set; } = "/";
         public static Task? AppCompletion { get; private set; }
@@ -29,12 +30,13 @@ namespace BlazorSamples.Tests
             App.UseWebSockets();
             App.MapGet(Path, async (
                 HttpContext context,
+                ILogger log,
                 CancellationToken ct) =>
             {
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
-                    await WebSocketFunction(webSocket, ct).ConfigureAwait(false);
+                    await WebSocketFunction(webSocket, log, ct).ConfigureAwait(false);
                 }
                 else
                 {
@@ -46,7 +48,7 @@ namespace BlazorSamples.Tests
             await AppCompletion.ConfigureAwait(false);
         }
 
-        private static async Task Echo(WebSocket webSocket, CancellationToken ct)
+        private static async Task Echo(WebSocket webSocket, ILogger log, CancellationToken ct)
         {
             var buffer = new byte[DefaultBufferSize];
             var receiveResult = await webSocket.ReceiveAsync(

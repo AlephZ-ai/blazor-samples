@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
-    public interface IEvent
+    public interface IStreamSidEvent : IEvent
     {
-        public EventDirection Direction { get; }
+        public const string STREAM_SID = "streamSid";
+
+        public string StreamSid { get; }
     }
 }

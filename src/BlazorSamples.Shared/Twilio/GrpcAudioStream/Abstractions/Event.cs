@@ -14,15 +14,10 @@ using BlazorSamples.Shared.Twilio.GrpcAudioStream.Stop;
 
 namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
 {
-    [JsonPolymorphic(TypeDiscriminatorPropertyName = EVENT)]
     public abstract class Event : IEvent
     {
         public const string EVENT = "event";
         public const string UNKNOWN = "unknown";
-
-        [Required(AllowEmptyStrings = false)]
-        [JsonPropertyName(EVENT)]
-        public string EventType { get; init; } = UNKNOWN;
 
         [Required]
         [JsonIgnore]

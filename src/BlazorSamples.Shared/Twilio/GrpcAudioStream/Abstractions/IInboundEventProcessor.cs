@@ -18,7 +18,7 @@ namespace BlazorSamples.Shared.Twilio.GrpcAudioStream.Abstractions
         internal protected T Handle(InboundMediaEvent mediaEvent);
         internal protected T Handle(InboundStopEvent stopEvent);
         internal protected T Handle(InboundMarkEvent markEvent);
-        protected static T DefaultProcessEvent(IInboundEventProcessor<T> processor, IInboundEvent inboundEvent) => inboundEvent.RunProcessor(processor);
-        public T ProcessEvent(IInboundEvent inboundEvent) => IInboundEventProcessor<T>.DefaultProcessEvent(this, inboundEvent);
+        protected static T DefaultProcessEvent(IInboundEventProcessor<T> processor, InboundEvent inboundEvent) => inboundEvent.RunProcessor(processor);
+        public T ProcessEvent(InboundEvent inboundEvent) => IInboundEventProcessor<T>.DefaultProcessEvent(this, inboundEvent);
     }
 }

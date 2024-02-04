@@ -6,6 +6,8 @@ using System.Net.WebSockets;
 using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Text;
+using BlazorSamples.Shared;
+using Microsoft.Extensions.Logging;
 using WebSocketAsyncEnumerableReceiveMessage = (System.Net.WebSockets.ValueWebSocketReceiveResult Result, System.ReadOnlyMemory<byte> Buffer);
 using WebSocketAsyncEnumerableSendMessage = (System.Net.WebSockets.WebSocketMessageFlags Flags, System.ReadOnlyMemory<byte> Buffer);
 
@@ -17,8 +19,10 @@ namespace System.Net.WebSockets
         public static async IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReadAllAsync(
             this WebSocket webSocket,
             int bufferSize = DefaultBufferSize,
+            ILogger? log = null,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
+            log?.LogEnter();
             if (webSocket.State != WebSocketState.Open) yield break;
             MemoryPool<byte> pool = MemoryPool<byte>.Shared;
             using IMemoryOwner<byte> owner = pool.Rent(bufferSize);
@@ -26,15 +30,20 @@ namespace System.Net.WebSockets
             ValueWebSocketReceiveResult result = default;
             while (webSocket.State == WebSocketState.Open && result.MessageType != WebSocketMessageType.Close)
             {
+                log?.LogAwait();
                 result = await webSocket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
+                log?.LogReceive(result, buffer);
                 yield return (result, buffer[..result.Count]);
             }
+
+            log?.LogExit();
         }
 
         public static IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> ReadAllAsync(
             this WebSocket webSocket,
+            ILogger? log = null,
             CancellationToken ct = default) =>
-        webSocket.ReadAllAsync(DefaultBufferSize, ct);
+        webSocket.ReadAllAsync(DefaultBufferSize, log, ct);
 
         public static async IAsyncEnumerable<Unit> SendAsyncEnumerable(
             this WebSocket webSocket,
