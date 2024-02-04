@@ -18,28 +18,45 @@ namespace System.Collections.Generic
     {
         public const int DefaultBufferSize = 4 * 1024;
 
-        public static async IAsyncEnumerable<string> DetectSentenceSimple(this IAsyncEnumerable<string> source, [EnumeratorCancellation] CancellationToken ct = default)
+        public static async IAsyncEnumerable<string> DetectSentenceSimple(this IAsyncEnumerable<string> source, ILogger log, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            var sentence = string.Empty;
-            await foreach (var partial in source.WithCancellation(ct).ConfigureAwait(false))
+            log.Enter();
+            try
             {
-                sentence += partial ?? string.Empty;
-                if (DetectSentenceSimple(ref sentence, out var leftOver))
+                var sentence = string.Empty;
+                await foreach (var partial in source.WithCancellation(ct).ConfigureAwait(false))
                 {
-                    yield return sentence;
-                    sentence = leftOver;
+                    log.Loop();
+                    sentence += partial ?? string.Empty;
+                    if (DetectSentenceSimple(ref sentence, out var leftOver, log))
+                    {
+                        log.Yield();
+                        yield return sentence;
+                        sentence = leftOver;
+                    }
                 }
+            }
+            finally
+            {
+                log.Exit();
             }
         }
         
-        private static bool DetectSentenceSimple(ref string sentence, out string leftOver)
+        private static bool DetectSentenceSimple(ref string sentence, out string leftOver, ILogger log)
         {
-            if (sentence.Contains('.') || sentence.Contains('!') || sentence.Contains('?'))
+            try
             {
-                var split = sentence.Split(new[] { '.', '!', '?' }, 2);
-                sentence = split[0].Trim();
-                leftOver = split[1] ?? string.Empty;
-                return true;
+                if (sentence.Contains('.') || sentence.Contains('!') || sentence.Contains('?'))
+                {
+                    var split = sentence.Split(new[] { '.', '!', '?' }, 2);
+                    sentence = split[0].Trim();
+                    leftOver = split[1] ?? string.Empty;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Exception(ex);
             }
 
             leftOver = string.Empty;
@@ -68,7 +85,7 @@ namespace System.Collections.Generic
 
         public static Utf8BytesAsyncEnumerable ToBytesAsync(this Utf8StringAsyncEnumerable source, ILogger log, int initialBufferSize = DefaultBufferSize)
         {
-            log.LogEnter();
+            log.Enter();
             var pool = MemoryPool<byte>.Shared;
             var owner = pool.Rent(initialBufferSize);
             var buffer = owner.Memory;
@@ -76,16 +93,16 @@ namespace System.Collections.Generic
                 .Where(str => !string.IsNullOrEmpty(str))
                 .Select(ReadOnlyMemory<byte> (str) =>
                 {
-                    log.LogLoop();
+                    log.Loop();
                     ResizeBufferIfNeeded(pool, ref owner, ref buffer, 0, Encoding.UTF8.GetByteCount(str!), log);
                     var length = Encoding.UTF8.GetBytes(str, buffer.Span);
-                    log.LogYield();
+                    log.Yield();
                     return buffer[..length];
                 })
                 .Finally(() =>
                 {
                     owner.Dispose();
-                    log.LogExit();
+                    log.Exit();
                 });
         }
 
@@ -96,10 +113,10 @@ namespace System.Collections.Generic
             this IAsyncEnumerable<ReadOnlyMemory<T>> source,
             ILogger? log = null)
         {
-            log?.LogEnter();
+            log?.Enter();
             return source.Where(buffer => buffer.Length > 0)
-                .Select(i => { log?.LogYield(); return i; })
-                .Finally(() => log?.LogExit());
+                .Select(i => { log?.Yield(); return i; })
+                .Finally(() => log?.Exit());
         }
 
         public static IAsyncEnumerable<T> ExcludeNull<T>(this IAsyncEnumerable<T?> source)
@@ -115,7 +132,7 @@ namespace System.Collections.Generic
                 {
                     var newSize = buffer.Length;
                     while (newSize < combinedSize) newSize *= 2;
-                    log.LogBufferResize(buffer.Length, newSize);
+                    log.BufferResize(buffer.Length, newSize);
                     var newBuffer = pool.Rent(newSize);
                     buffer.CopyTo(newBuffer.Memory);
                     buffer = newBuffer.Memory;
@@ -125,7 +142,7 @@ namespace System.Collections.Generic
             }
             catch (Exception ex)
             {
-                log.LogException(ex);
+                log.Exception(ex);
                 throw;
             }
         }

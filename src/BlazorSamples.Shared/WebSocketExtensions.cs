@@ -18,7 +18,7 @@ public static class WebSocketExtensions
         int bufferSize = DefaultBufferSize,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        log.LogEnter();
+        log.Enter();
         try
         {
             if (webSocket.State != WebSocketState.Open) yield break;
@@ -28,26 +28,26 @@ public static class WebSocketExtensions
             ValueWebSocketReceiveResult result = default;
             while (webSocket.State == WebSocketState.Open && result.MessageType != WebSocketMessageType.Close)
             {
-                log.LogLoop();
+                log.Loop();
                 try
                 {
-                    log.LogAwait();
+                    log.Await();
                     result = await webSocket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
-                    log.LogReceived();
+                    log.Received();
                 }
                 catch (Exception ex)
                 {
-                    log.LogException(ex);
+                    log.Exception(ex);
                     throw;
                 }
 
-                log.LogYield();
+                log.Yield();
                 yield return (result, buffer[..result.Count]);
             }
         }
         finally
         {
-            log.LogExit();
+            log.Exit();
         }
     }
 
@@ -64,32 +64,32 @@ public static class WebSocketExtensions
         WebSocketMessageType messageType = WebSocketMessageType.Text,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        log.LogEnter();
+        log.Enter();
         try
         {
             await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
             {
                 try
                 {
-                    log.LogLoop();
+                    log.Loop();
                     if (webSocket.State != WebSocketState.Open) break;
-                    log.LogAwait();
+                    log.Await();
                     await webSocket.SendAsync(message.Buffer, messageType, message.Flags, ct).ConfigureAwait(false);
-                    log.LogSent();
+                    log.Sent();
                 }
                 catch (Exception ex)
                 {
-                    log.LogException(ex);
+                    log.Exception(ex);
                     throw;
                 }
 
-                log.LogYield();
+                log.Yield();
                 yield return Unit.Default;
             }
         }
         finally
         {
-            log.LogExit();
+            log.Exit();
         }
     }
 
@@ -121,7 +121,7 @@ public static class WebSocketExtensions
         int initialBufferSize = DefaultBufferSize,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        log.LogEnter();
+        log.Enter();
         // TODO: This is a naive implementation that will rent a new even if no resize is needed.
         // Only rent a new buffer on first need, when a message is larger than the current buffer.
         // Set a maximum buffer size and throw an exception if the message is larger than the maximum to avoid a DOS attack.
@@ -133,13 +133,13 @@ public static class WebSocketExtensions
         {
             await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
             {
-                log.LogLoop();
+                log.Loop();
                 AsyncEnumerableExtensions.ResizeBufferIfNeeded(pool, ref owner, ref buffer, offset, message.Buffer.Length, log);
                 message.Buffer.CopyTo(buffer[offset..]);
                 offset += message.Buffer.Length;
                 if (message.Result.EndOfMessage)
                 {
-                    log.LogYield();
+                    log.Yield();
                     yield return buffer[..offset];
                     offset = 0;
                 }
@@ -148,7 +148,7 @@ public static class WebSocketExtensions
         finally
         {
             owner.Dispose();
-            log.LogExit();
+            log.Exit();
         }
     }
 }

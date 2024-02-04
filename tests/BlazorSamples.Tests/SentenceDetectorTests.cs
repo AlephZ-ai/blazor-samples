@@ -1,3 +1,5 @@
+using fm.Extensions.Logging.TestContext;
+
 namespace BlazorSamples.Tests;
 
 [TestClass]
@@ -25,7 +27,8 @@ public class SentenceDetectorTests
             " This is great."
         };
 
-        var sentences = await Produce(fragments).DetectSentenceSimple(ct).ToListAsync(ct).ConfigureAwait(false);
+        var log = new TestContextLogger(nameof(DetectSentenceTest), _context);
+        var sentences = await Produce(fragments).DetectSentenceSimple(log, ct).ToListAsync(ct).ConfigureAwait(false);
         Assert.AreEqual("A shining example of how society can thrive", sentences[0]);
         Assert.AreEqual("This is great", sentences[1]);
     }

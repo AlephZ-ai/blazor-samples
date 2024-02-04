@@ -152,7 +152,7 @@ static async Task ProcessAsync(
         .Where(text => text.IsPauseDetected && !string.IsNullOrEmpty(text.Fragment))
         .Select(text => text.Fragment!)
         .CompleteChatAsync(chatCompleter, ct)
-        .DetectSentenceSimple(ct)
+        .DetectSentenceSimple(log, ct)
         .GenerateSpeechAsync(ttsGenerator, ct);
 
     await webSocket.SendAllAsync(receiveLoop, log, WebSocketMessageType.Text, ct)
