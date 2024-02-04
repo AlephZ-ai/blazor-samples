@@ -227,7 +227,7 @@ namespace BlazorSamples.Tests
                 .Select(r => r.Buffer);
 
             await webSocket
-                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, log, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);
@@ -247,7 +247,7 @@ namespace BlazorSamples.Tests
                 .Select(r => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return r; });
 
             await webSocket
-                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, log, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);
@@ -275,7 +275,7 @@ namespace BlazorSamples.Tests
                 .ToBytesAsync();
 
             await webSocket
-                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
+                .SendAllAsync(receiveLoop, WebSocketMessageType.Text, log, ct)
                 .Select(s => { Interlocked.Increment(ref _serverSendCount); return s; })
                 .LastAsync(cancellationToken: ct)
                 .ConfigureAwait(false);

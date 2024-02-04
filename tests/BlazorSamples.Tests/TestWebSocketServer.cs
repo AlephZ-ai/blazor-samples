@@ -31,7 +31,7 @@ namespace BlazorSamples.Tests
             App.UseWebSockets();
             App.MapGet(Path, async (
                 HttpContext context,
-                [FromServices] ILogger<TestWebSocketServer> log,
+                ILogger<TestWebSocketServer> log,
                 CancellationToken ct) =>
             {
                 if (context.WebSockets.IsWebSocketRequest)

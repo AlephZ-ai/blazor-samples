@@ -32,7 +32,7 @@ namespace System.Net.WebSockets
             {
                 log?.LogAwait();
                 result = await webSocket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
-                log?.LogReceive(result, buffer);
+                log?.LogReceive();
                 yield return (result, buffer[..result.Count]);
             }
 
@@ -45,38 +45,47 @@ namespace System.Net.WebSockets
             CancellationToken ct = default) =>
         webSocket.ReadAllAsync(DefaultBufferSize, log, ct);
 
-        public static async IAsyncEnumerable<Unit> SendAsyncEnumerable(
+        public static async IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
             IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> source,
             WebSocketMessageType messageType = WebSocketMessageType.Text,
+            ILogger? log = null,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
+            log?.LogEnter();
             await foreach (var message in source.WithCancellation(ct).ConfigureAwait(false))
             {
                 if (webSocket.State != WebSocketState.Open) break;
+                log?.LogAwait();
                 await webSocket.SendAsync(message.Buffer, messageType, message.Flags, ct).ConfigureAwait(false);
+                log?.LogReceive();
                 yield return Unit.Default;
             }
+            
+            log?.LogExit();
         }
 
         public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
             IAsyncEnumerable<WebSocketAsyncEnumerableSendMessage> source,
+            ILogger? log = null,
             CancellationToken ct = default) =>
-        webSocket.SendAsyncEnumerable(source, WebSocketMessageType.Text, ct);
+        webSocket.SendAllAsync(source, WebSocketMessageType.Text, log, ct);
 
         public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
             IAsyncEnumerable<ReadOnlyMemory<byte>> source,
             WebSocketMessageType messageType = WebSocketMessageType.Text,
+            ILogger? log = null,
             CancellationToken ct = default) =>
-        webSocket.SendAsyncEnumerable(source.Select(buffer => (WebSocketMessageFlags.EndOfMessage, buffer)), messageType, ct);
+        webSocket.SendAllAsync(source.Select(buffer => (WebSocketMessageFlags.EndOfMessage, buffer)), messageType, log, ct);
 
         public static IAsyncEnumerable<Unit> SendAllAsync(
             this WebSocket webSocket,
             IAsyncEnumerable<ReadOnlyMemory<byte>> source,
+            ILogger? log = null,
             CancellationToken ct = default) =>
-        webSocket.SendAllAsync(source, WebSocketMessageType.Text, ct);
+        webSocket.SendAllAsync(source, WebSocketMessageType.Text, log, ct);
 
         public static async IAsyncEnumerable<ReadOnlyMemory<byte>> RecombineFragmentsAsync(
             this IAsyncEnumerable<WebSocketAsyncEnumerableReceiveMessage> source,

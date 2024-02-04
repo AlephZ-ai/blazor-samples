@@ -155,7 +155,7 @@ static async Task ProcessAsync(
         .DetectSentenceSimple(ct)
         .GenerateSpeechAsync(ttsGenerator, ct);
 
-    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, ct)
+    await webSocket.SendAllAsync(receiveLoop, WebSocketMessageType.Text, log, ct)
         .LastAsync(cancellationToken: ct)
         .ConfigureAwait(false);
 
