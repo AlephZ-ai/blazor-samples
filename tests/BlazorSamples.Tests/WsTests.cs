@@ -267,10 +267,10 @@ namespace BlazorSamples.Tests
                 .ExcludeEmpty()
                 .ConvertFromJsonAsync<JsonTest>(log)
                 .ToJsonBytesAsync(log)
-                .ToStringAsync()
+                .ToStringAsync(log)
                 .ToBytesAsync(log)
                 .ConvertFromJsonAsync<JsonTest>(log)
-                .ToJsonStringAsync()
+                .ToJsonStringAsync(log)
                 .Select(s => { Interlocked.Increment(ref _serverRecombinedReceiveCount); return s; })
                 .ToBytesAsync(log);
 

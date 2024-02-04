@@ -68,9 +68,9 @@ namespace System.Collections.Generic
             log.Enter();
             jsonOptions ??= JsonSerializerOptions.Default;
             return source
-                .Select(x => { log.Loop(); return x; })
                 .Select(json =>
                 {
+                    log.Loop();
                     try
                     {
                         return JsonSerializer.Deserialize<T>(json.Span, jsonOptions);
@@ -91,9 +91,9 @@ namespace System.Collections.Generic
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
             return source
-                .Select(x => { log.Loop(); return x; })
                 .Select(obj =>
                 {
+                    log.Loop();
                     try
                     {
                         return new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions));
@@ -108,11 +108,27 @@ namespace System.Collections.Generic
                 .Finally(() => log.Exit());
         }
 
-        public static Utf8JsonStringAsyncEnumerable ToJsonStringAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
+        public static Utf8JsonStringAsyncEnumerable ToJsonStringAsync<T>(this IAsyncEnumerable<T> source, ILogger log, JsonSerializerOptions? jsonOptions = null)
         {
+            log.Enter();
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
-            return source.Select(obj => JsonSerializer.Serialize(obj, jsonOptions));
+            return source
+                .Select(obj =>
+                {
+                    log.Loop();
+                    try
+                    {
+                        return JsonSerializer.Serialize(obj, jsonOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Exception(ex);
+                        throw;
+                    }
+                })
+                .Select(x => { log.Yield(); return x; })
+                .Finally(() => log.Exit());
         }
 
         public static Utf8BytesAsyncEnumerable ToBytesAsync(this Utf8StringAsyncEnumerable source, ILogger log, int initialBufferSize = DefaultBufferSize)
@@ -122,10 +138,10 @@ namespace System.Collections.Generic
             var owner = pool.Rent(initialBufferSize);
             var buffer = owner.Memory;
             return source
+                .Select(x => { log.Loop(); return x; })
                 .Where(str => !string.IsNullOrEmpty(str))
                 .Select(ReadOnlyMemory<byte> (str) =>
                 {
-                    log.Loop();
                     ResizeBufferIfNeeded(pool, ref owner, ref buffer, 0, Encoding.UTF8.GetByteCount(str!), log);
                     var length = Encoding.UTF8.GetBytes(str, buffer.Span);
                     log.Yield();
@@ -138,8 +154,26 @@ namespace System.Collections.Generic
                 });
         }
 
-        public static Utf8StringAsyncEnumerable ToStringAsync(this Utf8BytesAsyncEnumerable source) =>
-            source.Select(buffer => Encoding.UTF8.GetString(buffer.Span));
+        public static Utf8StringAsyncEnumerable ToStringAsync(this Utf8BytesAsyncEnumerable source, ILogger log)
+        {
+            log.Enter();
+            return source
+                .Select(buffer =>
+                {
+                    log.Loop();
+                    try
+                    {
+                        return Encoding.UTF8.GetString(buffer.Span);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Exception(ex);
+                        throw;
+                    }
+                })
+                .Select(x => { log.Yield(); return x; })
+                .Finally(() => log.Exit());
+        }
 
         public static IAsyncEnumerable<ReadOnlyMemory<T>> ExcludeEmpty<T>(
             this IAsyncEnumerable<ReadOnlyMemory<T>> source,
