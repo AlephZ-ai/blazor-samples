@@ -85,11 +85,27 @@ namespace System.Collections.Generic
                 .Finally(() => log.Exit());
         }
 
-        public static Utf8JsonBytesAsyncEnumerable ToJsonBytesAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)
+        public static Utf8JsonBytesAsyncEnumerable ToJsonBytesAsync<T>(this IAsyncEnumerable<T> source, ILogger log, JsonSerializerOptions? jsonOptions = null)
         {
+            log.Enter();
             //TODO: Not happy with this memory footprint
             jsonOptions ??= JsonSerializerOptions.Default;
-            return source.Select(obj => new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions)));
+            return source
+                .Select(x => { log.Loop(); return x; })
+                .Select(obj =>
+                {
+                    try
+                    {
+                        return new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(obj, jsonOptions));
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Exception(ex);
+                        throw;
+                    }
+                })
+                .Select(x => { log.Yield(); return x; })
+                .Finally(() => log.Exit());
         }
 
         public static Utf8JsonStringAsyncEnumerable ToJsonStringAsync<T>(this IAsyncEnumerable<T> source, JsonSerializerOptions? jsonOptions = null)

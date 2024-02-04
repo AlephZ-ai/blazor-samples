@@ -266,7 +266,7 @@ namespace BlazorSamples.Tests
                 .RecombineFragmentsAsync(log, TestWebSocketServer.DefaultBufferSize, ct)
                 .ExcludeEmpty()
                 .ConvertFromJsonAsync<JsonTest>(log)
-                .ToJsonBytesAsync()
+                .ToJsonBytesAsync(log)
                 .ToStringAsync()
                 .ToBytesAsync(log)
                 .ConvertFromJsonAsync<JsonTest>(log)
