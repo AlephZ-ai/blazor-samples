@@ -9,6 +9,8 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using fm.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorSamples.Tests
@@ -331,7 +333,7 @@ namespace BlazorSamples.Tests
             return JsonSerializer.Deserialize<T>(message.ToString());
         }
 
-        private static WebApplicationFactory<TestWebSocketServer> CreateFactory()
+        private WebApplicationFactory<TestWebSocketServer> CreateFactory()
         {
             var factory = new WebApplicationFactory<TestWebSocketServer>()
             .WithWebHostBuilder(builder =>
@@ -343,6 +345,8 @@ namespace BlazorSamples.Tests
                     options.PreserveExecutionContext = true;
                     options.AllowSynchronousIO = false;
                 });
+
+                builder.ConfigureLogging(configure => configure.AddTestContext(_context));
             });
 
             factory.ConfigureAwait(false);

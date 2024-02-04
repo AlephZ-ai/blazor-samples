@@ -7,6 +7,7 @@ using System.Net.WebSockets;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorSamples.Tests
@@ -30,7 +31,7 @@ namespace BlazorSamples.Tests
             App.UseWebSockets();
             App.MapGet(Path, async (
                 HttpContext context,
-                ILogger log,
+                [FromServices] ILogger<TestWebSocketServer> log,
                 CancellationToken ct) =>
             {
                 if (context.WebSockets.IsWebSocketRequest)

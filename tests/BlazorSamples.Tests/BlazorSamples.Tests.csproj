@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
+    <PackageReference Include="fm.Extensions.Logging.TestContext" Version="8.0.0-preview.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0-preview-24080-01" />
