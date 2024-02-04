@@ -177,17 +177,26 @@ namespace System.Collections.Generic
 
         public static IAsyncEnumerable<ReadOnlyMemory<T>> ExcludeEmpty<T>(
             this IAsyncEnumerable<ReadOnlyMemory<T>> source,
-            ILogger? log = null)
+            ILogger log)
         {
-            log?.Enter();
-            return source.Where(buffer => buffer.Length > 0)
-                .Select(i => { log?.Yield(); return i; })
-                .Finally(() => log?.Exit());
+            log.Enter();
+            return source
+                .Select(i => { log.Loop(); return i; })
+                .Where(buffer => buffer.Length > 0)
+                .Select(i => { log.Yield(); return i; })
+                .Finally(() => log.Exit());
         }
 
-        public static IAsyncEnumerable<T> ExcludeNull<T>(this IAsyncEnumerable<T?> source)
-            where T : class =>
-            source.Where(item => item is not null)!;
+        public static IAsyncEnumerable<T> ExcludeNull<T>(this IAsyncEnumerable<T?> source, ILogger log)
+            where T : class
+        {
+            log.Enter();
+            return source
+                .Select(i => { log.Loop(); return i; })
+                .Where(item => item is not null)
+                .Select(i => { log.Yield(); return i; })
+                .Finally(() => log.Exit())!;
+        }
 
         internal static void ResizeBufferIfNeeded(MemoryPool<byte> pool, ref IMemoryOwner<byte> owner, ref Memory<byte> buffer, int offset, int addedLength, ILogger log)
         {
